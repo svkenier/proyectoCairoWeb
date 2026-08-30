@@ -40,6 +40,12 @@ import InputLabel from '@mui/material/InputLabel';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Skeleton from '@mui/material/Skeleton';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Stack from '@mui/material/Stack';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import PersonAddIcon  from '@mui/icons-material/PersonAdd';
 import LockResetIcon  from '@mui/icons-material/LockReset';
 import DeleteIcon     from '@mui/icons-material/Delete';
@@ -80,8 +86,11 @@ function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDia
   const availableRoles: UserRole[] = (['voluntario', 'encargado', 'superadmin'] as UserRole[])
     .filter((r) => canCreateRole(actorRole, r));
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 0 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: 0 } }}>
       <DialogTitle fontWeight={700}>Crear usuario</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -149,8 +158,11 @@ function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
     setDone(false);
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
-    <Dialog open={Boolean(target)} onClose={handleClose} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 0 } }}>
+    <Dialog open={Boolean(target)} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: 0 } }}>
       <DialogTitle fontWeight={700}>Resetear contraseña</DialogTitle>
       <DialogContent>
         {done ? (
@@ -248,7 +260,71 @@ export default function UserManagement() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0 }}>
+      {/* ── VISTA DE TARJETAS (MÓVIL) ── */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+        {isLoading ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} variant="outlined" sx={{ borderRadius: 0 }}>
+              <CardContent><Skeleton variant="rectangular" height={100} /></CardContent>
+            </Card>
+          ))
+        ) : users.map((u) => (
+          <Card key={u.username} variant="outlined" sx={{ borderRadius: 0 }}>
+            <CardContent sx={{ pb: 1 }}>
+              <Typography variant="h6" fontWeight={700} lineHeight={1.2} mb={0.5}>
+                {u.username}
+                {u.username === currentUser?.username && (
+                  <Typography component="span" variant="caption" color="text.disabled" ml={1}>(tú)</Typography>
+                )}
+              </Typography>
+              <Chip
+                label={u.role}
+                size="small"
+                color={ROLE_COLORS[u.role]}
+                variant="outlined"
+                sx={{ textTransform: 'capitalize', mb: 1 }}
+              />
+              <Typography variant="body2" color="text.secondary" display="block">
+                Creado por: {u.created_by ?? '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" display="block">
+                Último acceso: {u.last_login ? new Date(u.last_login).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+              </Typography>
+            </CardContent>
+            {canActOn(u) && (
+              <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                <Stack direction="row" spacing={1} width="100%">
+                  <Button 
+                    size="small" 
+                    variant="outlined" 
+                    color="warning" 
+                    fullWidth
+                    onClick={() => setResetTarget(u)}
+                    startIcon={<LockResetIcon />}
+                  >
+                    Resetear
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant="outlined" 
+                    color="error" 
+                    onClick={() => { setDeleteError(''); setDeleteTarget(u); }}
+                    sx={{ minWidth: 40, px: 0 }}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Stack>
+              </CardActions>
+            )}
+          </Card>
+        ))}
+        {!isLoading && users.length === 0 && (
+          <Typography color="text.secondary" textAlign="center" py={4}>No hay usuarios registrados.</Typography>
+        )}
+      </Box>
+
+      {/* ── VISTA DE TABLA (ESCRITORIO) ── */}
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0, display: { xs: 'none', md: 'block' } }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: '#F8F7F4' }}>

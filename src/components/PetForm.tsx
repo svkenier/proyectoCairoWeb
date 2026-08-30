@@ -32,6 +32,8 @@ import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CloseIcon     from '@mui/icons-material/Close';
 import AddPhotoIcon  from '@mui/icons-material/AddPhotoAlternate';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { post, formatApiError } from '@/api/client';
 import { optimizeImage } from '@/utils/imageOptimizer';
@@ -152,6 +154,7 @@ function ImagePicker({ label, preview, onFile, onClear, size = 'large' }: ImageP
         id={`img-picker-${label}`}
         type="file"
         accept="image/*"
+        capture="environment"
         style={{ display: 'none' }}
         onChange={handleChange}
       />
@@ -275,12 +278,16 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{ sx: { borderRadius: 0 } }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

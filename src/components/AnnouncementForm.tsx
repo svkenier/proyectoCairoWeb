@@ -24,6 +24,8 @@ import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CloseIcon     from '@mui/icons-material/Close';
 import AddPhotoIcon  from '@mui/icons-material/AddPhotoAlternate';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { post, put, formatApiError } from '@/api/client';
 import { optimizeImage } from '@/utils/imageOptimizer';
@@ -155,12 +157,16 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
     mutation.mutate();
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{ sx: { borderRadius: 0 } }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -239,6 +245,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
               id="announcement-img"
               type="file"
               accept="image/*"
+              capture="environment"
               style={{ display: 'none' }}
               onChange={handleFile}
             />

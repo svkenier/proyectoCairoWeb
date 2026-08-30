@@ -28,6 +28,10 @@ import AddIcon    from '@mui/icons-material/Add';
 import EditIcon   from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Stack from '@mui/material/Stack';
 
 import { get, del, formatApiError } from '@/api/client';
 import AnnouncementForm from './AnnouncementForm';
@@ -110,7 +114,72 @@ export default function AnnouncementsManager() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0 }}>
+      {/* ── VISTA DE TARJETAS (MÓVIL) ── */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+        {isLoading ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} variant="outlined" sx={{ borderRadius: 0 }}>
+              <CardContent><Skeleton variant="rectangular" height={100} /></CardContent>
+            </Card>
+          ))
+        ) : announcements?.map((a) => (
+          <Card key={a.id} variant="outlined" sx={{ borderRadius: 0 }}>
+            <CardContent sx={{ display: 'flex', gap: 2, pb: 1 }}>
+              <Box
+                component="img"
+                src={a.image_url || PET_IMAGE_FALLBACK}
+                alt={a.title}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
+                sx={{ width: 80, height: 80, objectFit: 'cover' }}
+              />
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2} mb={0.5}>
+                  {a.title}
+                </Typography>
+                <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" color={TYPE_COLORS[a.type]} variant="outlined" sx={{ mb: 1 }} />
+                <Typography variant="body2" color="text.secondary" display="block">
+                  {a.date} {a.time && `• ${a.time}`}
+                </Typography>
+                <Chip
+                  label={a.is_active ? 'Activo' : 'Inactivo'}
+                  size="small"
+                  color={a.is_active ? 'success' : 'default'}
+                  sx={{ mt: 1 }}
+                />
+              </Box>
+            </CardContent>
+            <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+              <Stack direction="row" spacing={1} width="100%">
+                <Button 
+                  size="small" 
+                  variant="contained" 
+                  color="primary" 
+                  fullWidth
+                  onClick={() => handleOpenForm(a)}
+                  startIcon={<EditIcon />}
+                >
+                  Editar
+                </Button>
+                <Button 
+                  size="small" 
+                  variant="outlined" 
+                  color="error" 
+                  onClick={() => setDeleting(a)}
+                  sx={{ minWidth: 40, px: 0 }}
+                >
+                  <DeleteIcon />
+                </Button>
+              </Stack>
+            </CardActions>
+          </Card>
+        ))}
+        {!isLoading && announcements?.length === 0 && (
+          <Typography color="text.secondary" textAlign="center" py={4}>No hay anuncios registrados.</Typography>
+        )}
+      </Box>
+
+      {/* ── VISTA DE TABLA (ESCRITORIO) ── */}
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0, display: { xs: 'none', md: 'block' } }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: '#F8F7F4' }}>

@@ -109,11 +109,24 @@ export default function Navbar() {
               sx={{
                 borderRadius: 0,
                 mx: 1,
-                '&.Mui-selected': { bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } },
+                '&.Mui-selected, &.Mui-selected:hover, &:active': {
+                  bgcolor: 'primary.main',
+                  color: '#ffffff !important',
+                  '& .MuiListItemText-primary, & .MuiTypography-root, & span': {
+                    color: '#ffffff !important',
+                    fontWeight: 600,
+                  },
+                  '& .MuiListItemText-secondary': {
+                    color: 'rgba(255, 255, 255, 0.8) !important',
+                  },
+                  '& .MuiListItemIcon-root, & svg': {
+                    color: '#ffffff !important',
+                  },
+                },
               }}
             >
               {link.to === '/admin' && (
-                <AdminPanelSettingsIcon sx={{ mr: 1, fontSize: '1.1rem' }} />
+                <AdminPanelSettingsIcon sx={{ mr: 1, fontSize: '1.1rem', color: isActive(link.to) ? '#ffffff' : 'inherit' }} />
               )}
               <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: 500 }} />
             </ListItemButton>
@@ -121,12 +134,29 @@ export default function Navbar() {
         ))}
       </List>
 
-      {isAuthenticated && (
+      {isAuthenticated ? (
         <>
           <Divider sx={{ my: 1 }} />
           <Box sx={{ px: 2, pb: 2 }}>
             <Button fullWidth variant="outlined" color="error" size="small" onClick={handleLogout}>
               Cerrar sesión
+            </Button>
+          </Box>
+        </>
+      ) : (
+        <>
+          <Divider sx={{ my: 1 }} />
+          <Box sx={{ px: 2, pb: 2 }}>
+            <Button 
+              component={RouterLink} 
+              to="/login" 
+              fullWidth 
+              variant="outlined" 
+              color="primary" 
+              size="small" 
+              onClick={() => setDrawerOpen(false)}
+            >
+              Acceso staff
             </Button>
           </Box>
         </>

@@ -36,6 +36,16 @@ import EditIcon      from '@mui/icons-material/Edit';
 import DeleteIcon    from '@mui/icons-material/Delete';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import MenuIcon from '@mui/icons-material/Menu';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Stack from '@mui/material/Stack';
 import Navbar from '@/components/Navbar';
 import PetForm from '@/components/PetForm';
 import UserManagement from '@/components/UserManagement';
@@ -70,6 +80,7 @@ export default function Admin() {
   const qc = useQueryClient();
 
   const [tabIndex, setTabIndex] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Estados Mascotas
   const [petFormOpen, setPetFormOpen] = useState(false);
@@ -122,12 +133,20 @@ export default function Admin() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
-      <Container maxWidth="lg" sx={{ py: 6, flexGrow: 1 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 }, flexGrow: 1 }}>
         {/* Header Admin */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-          <AdminPanelSettingsIcon sx={{ fontSize: '2.5rem', color: 'primary.main' }} />
+          {/* Hamburger Menu solo en móvil */}
+          <IconButton 
+            onClick={() => setDrawerOpen(true)} 
+            sx={{ display: { xs: 'block', md: 'none' }, color: 'primary.main' }}
+          >
+            <MenuIcon fontSize="large" />
+          </IconButton>
+          
+          <AdminPanelSettingsIcon sx={{ fontSize: '2.5rem', color: 'primary.main', display: { xs: 'none', md: 'block' } }} />
           <Box>
-            <Typography variant="h4" fontWeight={800}>Panel de Administración</Typography>
+            <Typography variant="h4" fontWeight={800} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>Panel de Administración</Typography>
             {user && (
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                 <Chip label={user.username} size="small" />
@@ -137,8 +156,8 @@ export default function Admin() {
           </Box>
         </Box>
 
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        {/* Tabs de Escritorio */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', display: { xs: 'none', md: 'block' } }}>
           <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} aria-label="admin tabs" variant="scrollable">
             <Tab label="Mascotas" />
             <Tab label="Eventos y Anuncios" />
@@ -146,6 +165,39 @@ export default function Admin() {
             {isSuperadmin && <Tab label="Configuración del Refugio" />}
           </Tabs>
         </Box>
+
+        {/* Drawer de Móvil */}
+        <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 260, borderRadius: 0 } }}>
+          <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+            <Typography variant="h6" fontWeight={700}>Menú Admin</Typography>
+          </Box>
+          <List>
+            {['Mascotas', 'Eventos y Anuncios'].map((text, index) => (
+              <ListItem key={text} disablePadding>
+                <ListItemButton 
+                  selected={tabIndex === index} 
+                  onClick={() => { setTabIndex(index); setDrawerOpen(false); }}
+                >
+                  <ListItemText primary={text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+            {canManageUsers && (
+              <ListItem disablePadding>
+                <ListItemButton selected={tabIndex === 2} onClick={() => { setTabIndex(2); setDrawerOpen(false); }}>
+                  <ListItemText primary="Usuarios" />
+                </ListItemButton>
+              </ListItem>
+            )}
+            {isSuperadmin && (
+              <ListItem disablePadding>
+                <ListItemButton selected={tabIndex === (canManageUsers ? 3 : 2)} onClick={() => { setTabIndex(canManageUsers ? 3 : 2); setDrawerOpen(false); }}>
+                  <ListItemText primary="Configuración del Refugio" />
+                </ListItemButton>
+              </ListItem>
+            )}
+          </List>
+        </Drawer>
 
         {/* ── PANEL MASCOTAS ──────────────────────────────────────────────── */}
         <TabPanel value={tabIndex} index={0}>
@@ -166,7 +218,82 @@ export default function Admin() {
             </Alert>
           )}
 
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0 }}>
+          {/* ── VISTA DE TARJETAS (MÓVIL) ── */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+            {petsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} variant="outlined" sx={{ borderRadius: 0 }}>
+                  <CardContent><Skeleton variant="rectangular" height={100} /></CardContent>
+                </Card>
+              ))
+            ) : petsData?.mascotas.map((pet) => (
+              <Card key={pet.id} variant="outlined" sx={{ borderRadius: 0 }}>
+                <CardContent sx={{ display: 'flex', gap: 2, pb: 1 }}>
+                  <Box
+                    component="img"
+                    src={pet.imagen_principal || PET_IMAGE_FALLBACK}
+                    alt={pet.nombre}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
+                    sx={{ width: 80, height: 80, objectFit: 'cover' }}
+                  />
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                      {pet.nombre} {pet.destacado && '⭐'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      {pet.especie} • {pet.sexo} • {pet.edad_aproximada || 'Edad desc.'}
+                    </Typography>
+                    <Chip
+                      label={pet.estado}
+                      size="small"
+                      variant="outlined"
+                      color={pet.estado === 'adoptado' ? 'default' : pet.estado === 'en_proceso' ? 'warning' : 'success'}
+                    />
+                  </Box>
+                </CardContent>
+                <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                  <Stack direction="row" spacing={1} width="100%">
+                    <Button 
+                      size="small" 
+                      variant="outlined" 
+                      color="inherit" 
+                      fullWidth 
+                      href={`/mascotas/${pet.id}`} 
+                      target="_blank"
+                      startIcon={<OpenInNewIcon />}
+                    >
+                      Ver
+                    </Button>
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      color="primary" 
+                      fullWidth
+                      onClick={() => handleOpenEdit(pet)}
+                      startIcon={<EditIcon />}
+                    >
+                      Editar
+                    </Button>
+                    <Button 
+                      size="small" 
+                      variant="outlined" 
+                      color="error" 
+                      onClick={() => setPetToDelete(pet)}
+                      sx={{ minWidth: 40, px: 0 }}
+                    >
+                      <DeleteIcon />
+                    </Button>
+                  </Stack>
+                </CardActions>
+              </Card>
+            ))}
+            {(!petsData || petsData.mascotas.length === 0) && !petsLoading && (
+              <Typography color="text.secondary" textAlign="center" py={4}>No hay mascotas registradas.</Typography>
+            )}
+          </Box>
+
+          {/* ── VISTA DE TABLA (ESCRITORIO) ── */}
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0, display: { xs: 'none', md: 'block' } }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: '#F8F7F4' }}>
