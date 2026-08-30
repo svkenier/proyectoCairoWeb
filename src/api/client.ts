@@ -1,0 +1,175 @@
+/**
+ * Cliente HTTP centralizado para petRescue.
+ *
+ * Características:
+ * - Instancia única de Axios apuntando a los Serverless Functions de Vercel (/api).
+ * - Interceptor de REQUEST: inyecta automáticamente el token JWT desde localStorage.
+ * - Interceptor de RESPONSE: ante un 401, limpia la sesión y redirige al /login.
+ * - Tipado genérico para todas las respuestas de API.
+ */
+
+import axios, {
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios';
+
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'petrescue_token';
+const BASE_URL  = '/api'; // Vercel rewrites /api/* → Serverless Functions
+
+// ─── Helpers de sesión ───────────────────────────────────────────────────────
+
+/** Obtiene el token JWT del localStorage (o null si no existe). */
+export const getToken = (): string | null =>
+  localStorage.getItem(TOKEN_KEY);
+
+/** Persiste el token JWT en localStorage. */
+export const setToken = (token: string): void =>
+  void localStorage.setItem(TOKEN_KEY, token);
+
+/** Elimina el token JWT y cualquier dato de sesión del localStorage. */
+export const clearSession = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('petrescue_user');
+};
+
+// ─── Instancia de Axios ───────────────────────────────────────────────────────
+
+const apiClient: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  timeout: 20_000, // 20 segundos máximo por petición
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// ─── Interceptor de REQUEST ───────────────────────────────────────────────────
+
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const token = getToken();
+
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error: unknown) => Promise.reject(error),
+);
+
+// ─── Interceptor de RESPONSE ──────────────────────────────────────────────────
+
+apiClient.interceptors.response.use(
+  // Respuesta exitosa: pasar tal cual.
+  (response: AxiosResponse) => response,
+
+  // Error: manejar 401 limpiando sesión y redirigiendo.
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Limpiar sesión corrupta o expirada.
+      clearSession();
+
+      // Redirigir al login sin romper el historial de React Router.
+      // Usamos location.replace para forzar recarga limpia del estado de la app.
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+// ─── Tipo de error tipado ─────────────────────────────────────────────────────
+
+/** Estructura estándar del cuerpo de error devuelto por los endpoints /api. */
+export interface ApiError {
+  error: string;
+  message?: string;
+}
+
+/**
+ * Extrae el mensaje de error de una respuesta fallida de la API.
+ * Devuelve un string legible.
+ */
+export const extractApiError = (error: unknown): string => {
+  if (axios.isAxiosError<ApiError>(error)) {
+    return (
+      error.response?.data?.message ??
+      error.response?.data?.error ??
+      error.message ??
+      'Error desconocido'
+    );
+  }
+  if (error instanceof Error) return error.message;
+  return 'Error inesperado';
+};
+
+/**
+ * Formatea un error para mostrar al usuario, concatenando el mensaje descriptivo
+ * con el error técnico real (ej: "No se pudo iniciar sesión. (\"Request failed with status code 401\")").
+ */
+export const formatApiError = (error: unknown, fallbackMessage: string): string => {
+  let technicalMsg = '';
+  if (axios.isAxiosError<ApiError>(error)) {
+    const status = error.response?.status;
+    const axiosMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+    technicalMsg = status ? `${axiosMsg} - ${status}` : axiosMsg;
+  } else if (error instanceof Error) {
+    technicalMsg = error.message;
+  } else {
+    technicalMsg = String(error);
+  }
+  return `${fallbackMessage} ("${technicalMsg}")`;
+};
+
+
+// ─── Helpers tipados de conveniencia ─────────────────────────────────────────
+
+/**
+ * GET tipado.
+ * @example const pets = await get<PetsIndex>('/pets');
+ */
+export const get = <T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> =>
+  apiClient.get<T>(url, config).then((r) => r.data);
+
+/**
+ * POST tipado.
+ * @example const res = await post<LoginResponse>('/auth/login', payload);
+ */
+export const post = <T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> =>
+  apiClient.post<T>(url, data, config).then((r) => r.data);
+
+/**
+ * DELETE tipado.
+ * @example await del<{ ok: boolean }>('/pets', { data: { id } });
+ */
+export const del = <T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> =>
+  apiClient.delete<T>(url, config).then((r) => r.data);
+
+/**
+ * PUT tipado.
+ * @example const res = await put<Settings>('/settings', payload);
+ */
+export const put = <T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> =>
+  apiClient.put<T>(url, data, config).then((r) => r.data);
+
+export default apiClient;
