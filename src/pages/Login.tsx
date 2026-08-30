@@ -21,7 +21,7 @@ import Link from '@mui/material/Link';
 import Divider from '@mui/material/Divider';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon   from '@mui/icons-material/Lock';
-import PetsIcon   from '@mui/icons-material/Pets';
+import logo from '@/assets/logo.webp';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import IconButton from '@mui/material/IconButton';
@@ -78,22 +78,18 @@ export default function Login() {
         {/* Logo */}
         <Box textAlign="center" mb={3}>
           <Box
+            component="img"
+            src={logo}
+            alt="Proyecto Cairo"
             sx={{
-              display:         'inline-flex',
-              alignItems:      'center',
-              justifyContent:  'center',
               width:           64,
               height:          64,
-              borderRadius:    '50%',
-              bgcolor:         'primary.main',
+              objectFit:       'contain',
               mb:              1.5,
-              boxShadow:       '0 8px 24px rgba(217,118,86,0.35)',
             }}
-          >
-            <PetsIcon sx={{ color: 'white', fontSize: '1.8rem' }} />
-          </Box>
+          />
           <Typography variant="h5" fontWeight={800} color="primary">
-            petRescue
+            Proyecto Cairo
           </Typography>
           <Typography variant="body2" color="text.secondary" mt={0.5}>
             Acceso exclusivo para staff del refugio
