@@ -17,7 +17,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
-import { getUser, setUser } from '../_lib/kv.js';
+import { getUser, setUser } from '../kv.js';
 
 const SUPERADMIN_USERNAME = process.env['SUPERADMIN_USERNAME'] ?? 'superadmin';
 const MASTER_RESCUE_KEY   = process.env['MASTER_RESCUE_KEY']  ?? '';

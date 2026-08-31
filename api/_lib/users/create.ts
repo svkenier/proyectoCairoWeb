@@ -12,10 +12,10 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
-import { getAuthPayload } from '../_lib/auth.js';
-import { userExists, setUser } from '../_lib/kv.js';
-import { ROLE_LEVEL, canCreateRole } from '../../src/types/user.js';
-import type { UserRole, KVUser, PublicUser } from '../../src/types/user.js';
+import { getAuthPayload } from '../auth.js';
+import { userExists, setUser } from '../kv.js';
+import { ROLE_LEVEL, canCreateRole } from '../../../src/types/user.js';
+import type { UserRole, KVUser, PublicUser } from '../../../src/types/user.js';
 
 const BCRYPT_ROUNDS = 12;
 

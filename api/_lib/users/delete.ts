@@ -12,9 +12,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthPayload } from '../_lib/auth.js';
-import { getUser, deleteUser } from '../_lib/kv.js';
-import { ROLE_LEVEL, canManage } from '../../src/types/user.js';
+import { getAuthPayload } from '../auth.js';
+import { getUser, deleteUser } from '../kv.js';
+import { ROLE_LEVEL, canManage } from '../../../src/types/user.js';
 
 const SUPERADMIN_USERNAME = process.env['SUPERADMIN_USERNAME'] ?? 'superadmin';
 

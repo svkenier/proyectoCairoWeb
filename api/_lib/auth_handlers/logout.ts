@@ -11,8 +11,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthPayload } from '../_lib/auth.js';
-import { activateTTL } from '../_lib/kv.js';
+import { getAuthPayload } from '../auth.js';
+import { activateTTL } from '../kv.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();

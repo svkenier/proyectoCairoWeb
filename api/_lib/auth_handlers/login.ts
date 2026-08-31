@@ -9,9 +9,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getUser, cancelTTL, updateLastLogin } from '../_lib/kv.js';
-import { signToken } from '../_lib/auth.js';
-import { authRateLimit, checkRateLimit } from '../_lib/rate-limit.js';
+import { getUser, cancelTTL, updateLastLogin } from '../kv.js';
+import { signToken } from '../auth.js';
+import { authRateLimit, checkRateLimit } from '../rate-limit.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

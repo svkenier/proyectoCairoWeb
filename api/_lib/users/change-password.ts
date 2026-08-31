@@ -11,8 +11,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
-import { getAuthPayload } from '../_lib/auth.js';
-import { getUser, setUser } from '../_lib/kv.js';
+import { getAuthPayload } from '../auth.js';
+import { getUser, setUser } from '../kv.js';
 
 const BCRYPT_ROUNDS = 12;
 

@@ -13,9 +13,9 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
-import { getAuthPayload } from '../_lib/auth.js';
-import { getUser, setUser } from '../_lib/kv.js';
-import { ROLE_LEVEL, canManage } from '../../src/types/user.js';
+import { getAuthPayload } from '../auth.js';
+import { getUser, setUser } from '../kv.js';
+import { ROLE_LEVEL, canManage } from '../../../src/types/user.js';
 
 const BCRYPT_ROUNDS        = 12;
 const SUPERADMIN_USERNAME  = process.env['SUPERADMIN_USERNAME'] ?? 'superadmin';

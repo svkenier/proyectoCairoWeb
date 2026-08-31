@@ -9,9 +9,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthPayload } from '../_lib/auth.js';
-import { listUsers } from '../_lib/kv.js';
-import { ROLE_LEVEL } from '../../src/types/user.js';
+import { getAuthPayload } from '../auth.js';
+import { listUsers } from '../kv.js';
+import { ROLE_LEVEL } from '../../../src/types/user.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
