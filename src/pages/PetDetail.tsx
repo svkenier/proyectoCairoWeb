@@ -197,7 +197,7 @@ export default function PetDetail() {
                   <Box
                     component="img"
                     src={allImages[galleryIdx] || PET_IMAGE_FALLBACK}
-                    alt={`Foto ${galleryIdx + 1} de ${pet.nombre}`}
+                    alt={pet.nombre ? `Foto ${galleryIdx + 1} de ${pet.nombre}` : `Foto ${galleryIdx + 1} de la mascota`}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK;
                     }}
@@ -218,7 +218,7 @@ export default function PetDetail() {
                         key={idx}
                         component="img"
                         src={img}
-                        alt={`Miniatura ${idx + 1}`}
+                        alt={pet.nombre ? `Miniatura ${idx + 1} de ${pet.nombre}` : `Miniatura ${idx + 1} de la mascota`}
                         onClick={() => setGalleryIdx(idx)}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK;

@@ -129,7 +129,7 @@ export default function AnnouncementsManager() {
               <Box
                 component="img"
                 src={a.image_url || PET_IMAGE_FALLBACK}
-                alt={a.title}
+                alt={a.title ? `Imagen de ${a.title}` : 'Imagen del anuncio'}
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                 sx={{ width: 80, height: 80, objectFit: 'cover' }}
               />
@@ -207,7 +207,7 @@ export default function AnnouncementsManager() {
                       <Box
                         component="img"
                         src={a.image_url || PET_IMAGE_FALLBACK}
-                        alt={a.title}
+                        alt={a.title ? `Imagen miniatura de ${a.title}` : 'Imagen del anuncio'}
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                         sx={{ width: 40, height: 40, borderRadius: 0, objectFit: 'cover' }}
                       />

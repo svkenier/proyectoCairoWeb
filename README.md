@@ -10,6 +10,7 @@
   [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
   [![Material UI](https://img.shields.io/badge/MUI-v6-007FFF?logo=mui&logoColor=white)](https://mui.com/)
   [![Vercel](https://img.shields.io/badge/Vercel-Serverless-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+  [![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 </div>
 
 ---
@@ -43,6 +44,9 @@ El proyecto utiliza tecnologías modernas para garantizar rendimiento, escalabil
 - **Enrutamiento:** [React Router DOM v7](https://reactrouter.com/)
 - **Manejo de Estado Remoto:** [TanStack Query v5](https://tanstack.com/query)
 - **Fechas y Calendarios:** `@mui/x-date-pickers` + `dayjs`
+
+### Testing / QA Automation
+- **E2E Testing:** [Playwright](https://playwright.dev/) para auditoría de accesibilidad, enlaces, SEO y simulación de flujos de usuario completos.
 
 ### Backend (Serverless)
 - **Entorno:** [Vercel Serverless Functions](https://vercel.com/docs/functions) (`/api`)
@@ -140,6 +144,14 @@ Si solo deseas trabajar en UI usando mock data:
 ```bash
 npm run dev
 ```
+
+### 5. Pruebas Automatizadas (E2E Testing)
+
+El proyecto cuenta con una robusta suite de pruebas integrales para garantizar calidad, accesibilidad y evitar regresiones:
+
+- `npm run test:e2e` (ejecución general)
+- `npm run test:e2e:ui` (interfaz visual interactiva)
+- `npm run test:report` (ver reporte de resultados)
 
 ---
 

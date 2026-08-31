@@ -219,7 +219,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
                   <Box
                     component="img"
                     src={preview}
-                    alt="Flyer"
+                    alt={form.title ? `Flyer de ${form.title}` : 'Flyer del anuncio'}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                     sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />

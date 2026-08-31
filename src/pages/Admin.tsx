@@ -232,7 +232,7 @@ export default function Admin() {
                   <Box
                     component="img"
                     src={pet.imagen_principal || PET_IMAGE_FALLBACK}
-                    alt={pet.nombre}
+                    alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                     sx={{ width: 80, height: 80, objectFit: 'cover' }}
                   />
@@ -320,7 +320,7 @@ export default function Admin() {
                           <Box
                             component="img"
                             src={pet.imagen_principal || PET_IMAGE_FALLBACK}
-                            alt={pet.nombre}
+                            alt={pet.nombre ? `Miniatura de ${pet.nombre}` : 'Miniatura de mascota'}
                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                             sx={{ width: 40, height: 40, borderRadius: 0, objectFit: 'cover' }}
                           />

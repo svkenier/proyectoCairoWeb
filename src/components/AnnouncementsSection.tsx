@@ -64,7 +64,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           loading="lazy"
           height="220"
           image={announcement.image_url || PET_IMAGE_FALLBACK}
-          alt={announcement.title}
+          alt={announcement.title ? `Imagen de ${announcement.title}` : 'Imagen del anuncio'}
           sx={{ objectFit: 'cover' }}
         />
         <Chip
