@@ -24,6 +24,7 @@ const Terms        = lazy(() => import('@/pages/Terms'));
 const Privacy      = lazy(() => import('@/pages/Privacy'));
 const Login        = lazy(() => import('@/pages/Login'));
 const Admin        = lazy(() => import('@/pages/Admin'));
+const NotFound     = lazy(() => import('@/pages/NotFound'));
 
 // ─── Fallback de carga ───────────────────────────────────────────────────────
 function PageLoader() {
@@ -68,8 +69,8 @@ export default function App() {
             }
           />
 
-          {/* Catch-all → portada */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Catch-all → 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </AuthProvider>
