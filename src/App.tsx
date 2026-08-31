@@ -8,7 +8,7 @@
  * en Navbar, ProtectedRoute y cualquier página que lo necesite.
  */
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AuthProvider } from '@/contexts/AuthContext';
