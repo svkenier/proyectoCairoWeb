@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
-import { getAnnouncements, setAnnouncements } from './_lib/kv.js';
-import { getFile, putFile, deleteFile, announcementImgPath, cdnImageUrl } from './_lib/github.js';
+import { getFile, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath } from './_lib/github.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
 import type { Announcement, AnnouncementUpsertBody } from '../src/types/announcement.js';
 
@@ -11,7 +10,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET: Público (Retorna todos, pero en Home filtraremos por is_active)
   if (req.method === 'GET') {
     try {
-      const announcements = await getAnnouncements();
+      const file = await getFile(ANNOUNCEMENTS_JSON_PATH);
+      let announcements: Announcement[] = [];
+      if (file) {
+        try {
+          const parsed = JSON.parse(Buffer.from(file.content, 'base64').toString('utf-8'));
+          announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
+        } catch (e) {
+          announcements = [];
+        }
+      }
       return res.status(200).json(announcements);
     } catch (err) {
       console.error('[GET /api/announcements] Error:', err);
@@ -42,7 +50,17 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
       return res.status(400).json({ error: 'Título y descripción son requeridos' });
     }
 
-    const announcements = (await getAnnouncements()) as Announcement[];
+    const announcementsFile = await getFile(ANNOUNCEMENTS_JSON_PATH);
+    let announcements: Announcement[] = [];
+    if (announcementsFile) {
+      try {
+        const parsed = JSON.parse(Buffer.from(announcementsFile.content, 'base64').toString('utf-8'));
+        announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
+      } catch (e) {
+        announcements = [];
+      }
+    }
+
     const now = new Date().toISOString();
     
     // Generar ID o usar el existente
@@ -60,6 +78,17 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
         existingImg?.sha
       );
       finalImageUrl = cdnImageUrl(imgPath);
+    } else if (isUpdate && !finalImageUrl) {
+      // El usuario eliminó la imagen existente
+      try {
+        const imgPath = announcementImgPath(id);
+        const existingImg = await getFile(imgPath);
+        if (existingImg) {
+          await deleteFile(imgPath, existingImg.sha, `Remove announcement image for ${id}`);
+        }
+      } catch (err) {
+        console.warn(`No se pudo eliminar imagen antigua del anuncio ${id}:`, err);
+      }
     }
 
     const announcement: Announcement = {
@@ -76,18 +105,37 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
       updated_at: now,
     };
 
+    // Subir archivo JSON individual del anuncio
+    const individualPath = announcementJsonPath(id);
+    const existingIndividual = await getFile(individualPath);
+    await putFile(
+      individualPath,
+      JSON.stringify(announcement, null, 2),
+      `${isUpdate ? 'Update' : 'Add'} individual announcement JSON for ${id}`,
+      existingIndividual?.sha
+    );
+
+    // Actualizar el array consolidado
     if (isUpdate) {
       const index = announcements.findIndex(a => a.id === id);
       if (index >= 0) {
         announcements[index] = announcement;
       } else {
-        return res.status(404).json({ error: 'Anuncio no encontrado' });
+        // En caso de que se haya corrompido el index pero no el archivo, lo añadimos
+        announcements.unshift(announcement);
       }
     } else {
       announcements.unshift(announcement); // Los más recientes primero
     }
 
-    await setAnnouncements(announcements);
+    // Subir el archivo JSON consolidado
+    await putFile(
+      ANNOUNCEMENTS_JSON_PATH,
+      JSON.stringify(announcements, null, 2),
+      `${isUpdate ? 'Update' : 'Add'} announcement ${id} in master JSON`,
+      announcementsFile?.sha
+    );
+
     return res.status(isUpdate ? 200 : 201).json({ ok: true, announcement });
   } catch (err) {
     console.error(`[handleUpsert /api/announcements] Error:`, err);
@@ -100,13 +148,40 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
     const { id } = req.body as { id: string };
     if (!id) return res.status(400).json({ error: 'ID es requerido' });
 
-    let announcements = (await getAnnouncements()) as Announcement[];
-    const index = announcements.findIndex(a => a.id === id);
-    
-    if (index < 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    const announcementsFile = await getFile(ANNOUNCEMENTS_JSON_PATH);
+    let announcements: Announcement[] = [];
+    if (announcementsFile) {
+      try {
+        const parsed = JSON.parse(Buffer.from(announcementsFile.content, 'base64').toString('utf-8'));
+        announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
+      } catch (e) {
+        announcements = [];
+      }
+    }
 
-    announcements.splice(index, 1);
-    await setAnnouncements(announcements);
+    const index = announcements.findIndex(a => a.id === id);
+    if (index >= 0) {
+      announcements.splice(index, 1);
+      
+      // Subir el archivo consolidado actualizado
+      await putFile(
+        ANNOUNCEMENTS_JSON_PATH,
+        JSON.stringify(announcements, null, 2),
+        `Delete announcement ${id} from master JSON`,
+        announcementsFile?.sha
+      );
+    }
+
+    // Eliminar archivo JSON individual
+    try {
+      const individualPath = announcementJsonPath(id);
+      const existingIndividual = await getFile(individualPath);
+      if (existingIndividual) {
+        await deleteFile(individualPath, existingIndividual.sha, `Delete individual announcement JSON for ${id}`);
+      }
+    } catch (err) {
+      console.warn(`No se pudo eliminar el JSON individual para anuncio ${id}:`, err);
+    }
 
     // Intentar eliminar la imagen de GitHub (no es fatal si falla o no existe)
     try {

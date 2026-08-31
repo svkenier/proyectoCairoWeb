@@ -125,6 +125,7 @@ export async function deleteFile(
 
 /** Rutas a los JSON maestros. */
 export const PETS_JSON_PATH = 'data/pets.json';
+export const petJsonPath = (id: string) => `data/pets/${id}.json`;
 export const SHELTER_INFO_PATH = 'data/shelter-info.json';
 
 /** Ruta de la imagen principal de una mascota. */
@@ -132,6 +133,10 @@ export const petMainImgPath = (id: string) => `images/pets/${id}.webp`;
 
 /** Ruta de una imagen secundaria de una mascota. */
 export const petExtraImgPath = (id: string, n: number) => `images/pets/${id}-extra-${n}.webp`;
+
+/** Ruta a los JSON de anuncios */
+export const ANNOUNCEMENTS_JSON_PATH = 'data/announcements.json';
+export const announcementJsonPath = (id: string) => `data/announcements/${id}.json`;
 
 /** Ruta de una imagen de anuncio/evento. */
 export const announcementImgPath = (id: string) => `images/announcements/${id}.webp`;

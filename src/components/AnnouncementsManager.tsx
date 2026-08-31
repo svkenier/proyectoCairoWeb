@@ -65,7 +65,8 @@ export default function AnnouncementsManager() {
     queryKey: ['announcements'],
     queryFn: async () => {
       // Use internal api bypassing CDN cache for admin
-      return get<Announcement[]>('/announcements');
+      const data = await get<any>('/announcements');
+      return Array.isArray(data) ? data : (data?.announcements || []);
     },
   });
 

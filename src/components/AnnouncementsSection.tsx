@@ -19,6 +19,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon    from '@mui/icons-material/AccessTime';
 import LocationOnIcon    from '@mui/icons-material/LocationOn';
 import WhatsAppIcon      from '@mui/icons-material/WhatsApp';
+import CampaignIcon      from '@mui/icons-material/Campaign';
 
 import { get } from '@/api/client';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -164,8 +165,8 @@ export default function AnnouncementsSection() {
   const { data: announcements, isLoading, isError } = useQuery<Announcement[]>({
     queryKey: ['announcements-public'],
     queryFn: async () => {
-      const data = await get<Announcement[]>('/announcements');
-      return data;
+      const data = await get<any>('/announcements');
+      return Array.isArray(data) ? data : (data?.announcements || []);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -175,10 +176,6 @@ export default function AnnouncementsSection() {
     String(a.is_active) === 'true' || 
     (a.is_active as unknown) === 1
   ) || [];
-
-  if (!isLoading && activeAnnouncements.length === 0) {
-    return null; // Condición estricta: NO renderizar nada si no hay anuncios activos
-  }
 
   // Pre-codificamos el teléfono si existe
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
@@ -206,28 +203,42 @@ export default function AnnouncementsSection() {
           </Typography>
         )}
 
-        <Grid container spacing={4} justifyContent="center">
-          {isLoading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card sx={{ height: '100%' }}>
-                    <Skeleton variant="rectangular" height={220} />
-                    <CardContent>
-                      <Skeleton variant="text" width="60%" height={32} />
-                      <Skeleton variant="text" width="100%" height={24} />
-                      <Skeleton variant="text" width="80%" height={24} />
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))
-            : activeAnnouncements.map((announcement, i) => (
-                <Grid key={announcement.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
-                    <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
-                  </AnimatedSection>
-                </Grid>
-              ))}
-        </Grid>
+        {(!isLoading && activeAnnouncements.length === 0 && !isError) ? (
+          <AnimatedSection>
+            <Card elevation={0} sx={{ bgcolor: 'transparent', textAlign: 'center', py: 8 }}>
+              <CampaignIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
+                No hay eventos ni anuncios activos
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Mantente atento a nuestras próximas jornadas y actividades comunitarias.
+              </Typography>
+            </Card>
+          </AnimatedSection>
+        ) : (
+          <Grid container spacing={4} justifyContent="center">
+            {isLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Card sx={{ height: '100%' }}>
+                      <Skeleton variant="rectangular" height={220} />
+                      <CardContent>
+                        <Skeleton variant="text" width="60%" height={32} />
+                        <Skeleton variant="text" width="100%" height={24} />
+                        <Skeleton variant="text" width="80%" height={24} />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))
+              : activeAnnouncements.map((announcement, i) => (
+                  <Grid key={announcement.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
+                      <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                    </AnimatedSection>
+                  </Grid>
+                ))}
+          </Grid>
+        )}
       </Container>
     </Box>
   );

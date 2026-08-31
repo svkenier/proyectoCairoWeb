@@ -18,10 +18,12 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid2';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
+import Card from '@mui/material/Card';
 import SearchOutlinedIcon      from '@mui/icons-material/SearchOutlined';
 import ChatOutlinedIcon        from '@mui/icons-material/ChatOutlined';
 import HomeOutlinedIcon        from '@mui/icons-material/HomeOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import PetsIcon from '@mui/icons-material/Pets';
 import Navbar          from '@/components/Navbar';
 import Footer          from '@/components/Footer';
 import PetCard, { PetCardSkeleton } from '@/components/PetCard';
@@ -259,6 +261,20 @@ export default function Home() {
               >
                 Ver todas las mascotas
               </Button>
+            </AnimatedSection>
+          )}
+
+          {!isLoading && displayPets.length === 0 && (
+            <AnimatedSection>
+              <Box component={Card} elevation={0} sx={{ bgcolor: 'transparent', textAlign: 'center', py: 8 }}>
+                <PetsIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
+                  No hay mascotas registradas por el momento
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Pronto publicaremos nuevos peludos que buscan un hogar lleno de amor.
+                </Typography>
+              </Box>
             </AnimatedSection>
           )}
         </Container>

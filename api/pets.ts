@@ -15,7 +15,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
 import {
   getFile, putFile, deleteFile,
-  PETS_JSON_PATH, petMainImgPath, petExtraImgPath,
+  PETS_JSON_PATH, petJsonPath, petMainImgPath, petExtraImgPath,
   cdnImageUrl, generatePetId,
 } from './_lib/github.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
@@ -156,11 +156,21 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
     petsArray.push(pet);
   }
 
+  // Subir archivo JSON individual de la mascota
+  const individualPath = petJsonPath(petId);
+  const existingIndividual = await getFile(individualPath);
+  await putFile(
+    individualPath,
+    JSON.stringify(pet, null, 2),
+    `${isUpdate ? 'Update' : 'Add'} individual pet JSON for ${petId}`,
+    existingIndividual?.sha
+  );
+
   const petJsonStr = JSON.stringify(petsArray, null, 2);
   await putFile(
     PETS_JSON_PATH,
     Buffer.from(petJsonStr).toString('base64'),
-    `${isUpdate ? 'Update' : 'Add'} pet ${petId}: ${pet.nombre}`,
+    `${isUpdate ? 'Update' : 'Add'} pet ${petId}: ${pet.nombre} in master JSON`,
     petsFile?.sha,
   );
 
@@ -216,6 +226,17 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
   // Invalida caché
   const { invalidatePetsCache } = await import('./_lib/kv.js');
   await invalidatePetsCache();
+
+  // Eliminar archivo JSON individual
+  try {
+    const individualPath = petJsonPath(id);
+    const existingIndividual = await getFile(individualPath);
+    if (existingIndividual) {
+      await deleteFile(individualPath, existingIndividual.sha, `Delete individual pet JSON for ${id}`);
+    }
+  } catch (err) {
+    console.warn(`No se pudo eliminar el JSON individual para la mascota ${id}:`, err);
+  }
 
   // Eliminar imagen principal
   const mainImg = await getFile(petMainImgPath(id));

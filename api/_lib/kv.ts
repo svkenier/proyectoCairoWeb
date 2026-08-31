@@ -128,17 +128,5 @@ export async function setGlobalSettings(settings: unknown): Promise<void> {
   await redis.set(SETTINGS_KEY, settings);
 }
 
-// ─── Anuncios (Eventos/Jornadas) ──────────────────────────────────────────────
+// ─── Anuncios (Eliminados de KV, ahora en GitHub) ──────────────────────────────────────────────
 
-const ANNOUNCEMENTS_KEY = 'announcements:list';
-
-/** Obtiene la lista de anuncios. Retorna un array vacío si no existe. */
-export async function getAnnouncements(): Promise<unknown[]> {
-  const data = await redis.get<unknown[]>(ANNOUNCEMENTS_KEY);
-  return data ?? [];
-}
-
-/** Guarda la lista completa de anuncios. */
-export async function setAnnouncements(announcements: unknown[]): Promise<void> {
-  await redis.set(ANNOUNCEMENTS_KEY, announcements);
-}

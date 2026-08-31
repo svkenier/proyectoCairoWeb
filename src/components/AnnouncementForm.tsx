@@ -26,6 +26,11 @@ import CloseIcon     from '@mui/icons-material/Close';
 import AddPhotoIcon  from '@mui/icons-material/AddPhotoAlternate';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { post, put, formatApiError } from '@/api/client';
 import { optimizeImage } from '@/utils/imageOptimizer';
@@ -273,14 +278,15 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Fecha"
-              type="date"
-              value={form.date}
-              onChange={(e) => set('date', e.target.value)}
-              fullWidth size="small"
-              InputLabelProps={{ shrink: true }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+              <DatePicker
+                label="Fecha"
+                format="DD/MM/YYYY"
+                value={form.date ? dayjs(form.date, 'YYYY-MM-DD') : null}
+                onChange={(newValue) => set('date', newValue ? newValue.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { fullWidth: true, size: 'small', required: true } }}
+              />
+            </LocalizationProvider>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField

@@ -27,11 +27,17 @@ import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import KeyIcon from '@mui/icons-material/Key';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon         from '@mui/icons-material/Menu';
 import CloseIcon        from '@mui/icons-material/Close';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.webp';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 // ─── Definición de rutas ──────────────────────────────────────────────────────
 
@@ -54,13 +60,30 @@ export default function Navbar() {
   const isMobile           = useMediaQuery(theme.breakpoints.down('md'));
   const { isAuthenticated, user, logout } = useAuth();
   const [drawerOpen, setDrawerOpen]       = useState(false);
+  const [anchorEl, setAnchorEl]           = useState<null | HTMLElement>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
 
   const handleLogout = async () => {
+    setAnchorEl(null);
     await logout();
     setDrawerOpen(false);
+  };
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleOpenChangePassword = () => {
+    setAnchorEl(null);
+    setDrawerOpen(false);
+    setChangePasswordOpen(true);
   };
 
   const links = [
@@ -137,8 +160,11 @@ export default function Navbar() {
       {isAuthenticated ? (
         <>
           <Divider sx={{ my: 1 }} />
-          <Box sx={{ px: 2, pb: 2 }}>
-            <Button fullWidth variant="outlined" color="error" size="small" onClick={handleLogout}>
+          <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button fullWidth variant="outlined" color="primary" size="small" onClick={handleOpenChangePassword} startIcon={<KeyIcon />}>
+              Cambiar contraseña
+            </Button>
+            <Button fullWidth variant="outlined" color="error" size="small" onClick={handleLogout} startIcon={<LogoutIcon />}>
               Cerrar sesión
             </Button>
           </Box>
@@ -222,18 +248,41 @@ export default function Navbar() {
               {isAuthenticated && user ? (
                 <>
                   <Tooltip title={`${user.username} · ${user.role}`}>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.8rem', cursor: 'default' }}>
-                      {user.username.charAt(0).toUpperCase()}
-                    </Avatar>
+                    <IconButton onClick={handleOpenMenu} size="small" sx={{ ml: 1 }}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
+                        {user.username.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </IconButton>
                   </Tooltip>
-                  <Button
-                    size="small"
-                    color="inherit"
-                    onClick={handleLogout}
-                    sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    PaperProps={{
+                      elevation: 3,
+                      sx: { mt: 1.5, borderRadius: 0, minWidth: 200 }
+                    }}
                   >
-                    Salir
-                  </Button>
+                    <Box sx={{ px: 2, py: 1 }}>
+                      <Typography variant="body2" fontWeight={700}>{user.username}</Typography>
+                      <Typography variant="caption" color="text.secondary" textTransform="capitalize">{user.role}</Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem onClick={handleOpenChangePassword}>
+                      <ListItemIcon>
+                        <KeyIcon fontSize="small" />
+                      </ListItemIcon>
+                      <Typography variant="body2">Cambiar contraseña</Typography>
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>
+                      <ListItemIcon>
+                        <LogoutIcon fontSize="small" color="error" />
+                      </ListItemIcon>
+                      <Typography variant="body2" color="error">Cerrar sesión</Typography>
+                    </MenuItem>
+                  </Menu>
                 </>
               ) : (
                 <Button
@@ -273,6 +322,11 @@ export default function Navbar() {
       >
         {drawer}
       </Drawer>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </>
   );
 }

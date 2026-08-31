@@ -37,6 +37,9 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Skeleton from '@mui/material/Skeleton';
@@ -54,7 +57,7 @@ import { get, post, del, formatApiError } from '@/api/client';
 import { canManage, canCreateRole, ROLE_LEVEL } from '@/types/user';
 import type { PublicUser, UserRole } from '@/types/user';
 
-const SUPERADMIN_USERNAME = import.meta.env['VITE_SUPERADMIN_USERNAME'] as string | undefined ?? 'superadmin';
+const MAIN_OWNER = 'svkenier';
 
 const ROLE_COLORS: Record<UserRole, 'error' | 'warning' | 'default'> = {
   superadmin: 'error',
@@ -74,6 +77,7 @@ interface CreateUserDialogProps {
 function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDialogProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole]         = useState<UserRole>('voluntario');
   const [error, setError]       = useState('');
 
@@ -104,11 +108,20 @@ function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDia
           />
           <TextField
             label="Contraseña"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             fullWidth size="small"
             helperText="Mínimo 8 caracteres"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <FormControl fullWidth size="small">
             <InputLabel>Rol</InputLabel>
@@ -142,6 +155,7 @@ interface ResetPasswordDialogProps {
 
 function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError]       = useState('');
   const [done, setDone]         = useState(false);
 
@@ -176,12 +190,21 @@ function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
               Nueva contraseña para <strong>{target?.username}</strong>:
             </Typography>
             <TextField
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               label="Nueva contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               fullWidth size="small"
               helperText="Mínimo 8 caracteres"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
+                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </>
         )}
@@ -230,10 +253,47 @@ export default function UserManagement() {
   });
 
   const canActOn = (target: PublicUser) => {
-    if (!currentUser) return false;
-    if (target.username === SUPERADMIN_USERNAME) return false;
-    if (target.username === currentUser.username) return false;
-    return canManage(currentUser.role, target.role);
+    if (!currentUser) return { canReset: false, canDelete: false, disabledReason: '' };
+    
+    const isMainOwner = currentUser.username === MAIN_OWNER;
+    const isTargetMainOwner = target.username === MAIN_OWNER;
+    
+    // Si el objetivo es el propietario principal
+    if (isTargetMainOwner) {
+      if (!isMainOwner) {
+        return { 
+          canReset: true, 
+          canDelete: true, 
+          disabled: true, 
+          disabledReason: 'El superusuario principal no puede ser modificado ni eliminado' 
+        };
+      } else {
+        return { 
+          canReset: false, // Usa la función Cambiar Contraseña
+          canDelete: false, // No puede eliminarse a sí mismo
+          disabled: false, 
+          disabledReason: '' 
+        };
+      }
+    }
+    
+    // Si el objetivo es el usuario actual
+    if (target.username === currentUser.username) {
+      return { canReset: false, canDelete: false, disabledReason: '' };
+    }
+    
+    // El Owner principal puede eliminar a todos los demás
+    if (isMainOwner) {
+      return { canReset: true, canDelete: true, disabled: false, disabledReason: '' };
+    }
+    
+    const hasPermission = canManage(currentUser.role, target.role);
+    return { 
+      canReset: hasPermission, 
+      canDelete: hasPermission, 
+      disabled: false, 
+      disabledReason: '' 
+    };
   };
 
   const users = data?.users ?? [];
@@ -291,31 +351,49 @@ export default function UserManagement() {
                 Último acceso: {u.last_login ? new Date(u.last_login).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
               </Typography>
             </CardContent>
-            {canActOn(u) && (
-              <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
-                <Stack direction="row" spacing={1} width="100%">
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
-                    color="warning" 
-                    fullWidth
-                    onClick={() => setResetTarget(u)}
-                    startIcon={<LockResetIcon />}
-                  >
-                    Resetear
-                  </Button>
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
-                    color="error" 
-                    onClick={() => { setDeleteError(''); setDeleteTarget(u); }}
-                    sx={{ minWidth: 40, px: 0 }}
-                  >
-                    <DeleteIcon />
-                  </Button>
-                </Stack>
-              </CardActions>
-            )}
+            {(() => {
+              const actionStatus = canActOn(u);
+              if (!actionStatus.canReset && !actionStatus.canDelete) return null;
+              return (
+                <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                  <Stack direction="row" spacing={1} width="100%">
+                    {actionStatus.canReset && (
+                      <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Resetear contraseña"}>
+                        <span style={{ width: '100%' }}>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            color="warning" 
+                            fullWidth
+                            disabled={actionStatus.disabled}
+                            onClick={() => setResetTarget(u)}
+                            startIcon={<LockResetIcon />}
+                          >
+                            Resetear
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    )}
+                    {actionStatus.canDelete && (
+                      <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Eliminar usuario"}>
+                        <span style={{ display: 'inline-flex' }}>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            color="error"
+                            disabled={actionStatus.disabled}
+                            onClick={() => { setDeleteError(''); setDeleteTarget(u); }}
+                            sx={{ minWidth: 40, px: 0 }}
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </CardActions>
+              );
+            })()}
           </Card>
         ))}
         {!isLoading && users.length === 0 && (
@@ -372,20 +450,31 @@ export default function UserManagement() {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      {canActOn(u) && (
-                        <>
-                          <Tooltip title="Resetear contraseña">
-                            <IconButton size="small" color="warning" onClick={() => setResetTarget(u)}>
-                              <LockResetIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Eliminar usuario">
-                            <IconButton size="small" color="error" onClick={() => { setDeleteError(''); setDeleteTarget(u); }}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
+                      {(() => {
+                        const actionStatus = canActOn(u);
+                        return (
+                          <>
+                            {actionStatus.canReset && (
+                              <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Resetear contraseña"}>
+                                <span>
+                                  <IconButton size="small" color="warning" disabled={actionStatus.disabled} onClick={() => setResetTarget(u)}>
+                                    <LockResetIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                            {actionStatus.canDelete && (
+                              <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Eliminar usuario"}>
+                                <span>
+                                  <IconButton size="small" color="error" disabled={actionStatus.disabled} onClick={() => { setDeleteError(''); setDeleteTarget(u); }}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                          </>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}
