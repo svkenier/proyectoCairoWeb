@@ -35,20 +35,25 @@ function generateToken(username: string, role: string, tokenVersion: number = 1)
 }
 
 test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
-  const testUser = `testuser_${Date.now()}`;
+  let testUser = '';
   const testPassword = 'TestPassword123!';
 
-  // Utilidad para limpiar el usuario de prueba
-  async function cleanupUser(requestCtx) {
+  const createdTestUsers: string[] = [];
+
+  // Utilidad para limpiar los usuarios de prueba en bulk
+  async function cleanupUsers(requestCtx) {
+    if (createdTestUsers.length === 0) return;
     const adminToken = generateToken(SUPERADMIN, 'superadmin');
-    await requestCtx.delete('/api/users/delete', {
-      headers: { Authorization: `Bearer ${adminToken}` },
-      data: { target_username: testUser }
-    });
+    for (const user of createdTestUsers) {
+      await requestCtx.delete('/api/users/delete', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { target_username: user }
+      });
+    }
   }
 
   test.beforeEach(async ({ request }) => {
-    await cleanupUser(request);
+    testUser = `testuser_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     
     // Crear usuario de prueba como Superadmin
     const adminToken = generateToken(SUPERADMIN, 'superadmin');
@@ -62,12 +67,21 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
     });
     if (!res.ok()) {
       console.log('Error creating user:', await res.text());
+    } else {
+      if (!createdTestUsers.includes(testUser)) {
+        createdTestUsers.push(testUser);
+      }
     }
     expect(res.ok()).toBeTruthy();
   });
 
-  test.afterEach(async ({ request }) => {
-    await cleanupUser(request);
+  test.afterAll(async ({ request }) => {
+    try {
+      await cleanupUsers(request);
+    } finally {
+      // Vaciar el arreglo después de limpiar
+      createdTestUsers.length = 0;
+    }
   });
 
   test('Cierre de Sesión Forzado multi-contexto (Superadmin cierra sesión de usuario regular)', async ({ browser }) => {
