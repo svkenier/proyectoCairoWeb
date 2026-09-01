@@ -132,23 +132,17 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
     await responsePromise;
     await expect(adminPage.getByText('Sesiones invalidadas con éxito.')).toBeVisible({ timeout: 10000 });
     
-    // 3. Volver a la página del usuario y recargar, luego intentar una acción protegida
+    // 3. El heartbeat de 3s detectará la revocación automáticamente.
+    // Recargamos la página para disparar la verificación inmediata al montar ProtectedRoute.
     await userPage.reload();
-    await userPage.getByRole('button', { name: /Nueva mascota/i }).click();
-    // Llenar datos mínimos para pasar validación frontend y enviar al backend
-    await userPage.getByLabel(/Nombre \*/i).fill('Mascota Test Inval');
-    await userPage.getByLabel('Especie').click();
-    await userPage.getByRole('option', { name: /Perro/i }).click();
-    await userPage.getByLabel('Sexo').click();
-    await userPage.getByRole('option', { name: /Macho/i }).click();
-    await userPage.getByRole('button', { name: /Crear mascota/i }).click();
-    
-    // Como su tokenVersion en la cookie/localStorage ya no coincide con Redis, la API devolverá 401 y será redirigido
-    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 15000 });
-    
+    // Con el polling de 3s y la verificación inmediata al montar, la redirección
+    // ocurre en ≤3s sin necesidad de interacción manual.
+    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 10000 });
+
     await userContext.close();
     await adminContext.close();
   });
+
 
   test('Invalidación por Cambio de Contraseña', async ({ browser }) => {
     // 1. Contexto del usuario
@@ -191,16 +185,11 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
     await resetResponsePromise;
     await expect(adminPage.getByText(/exitosamente/i)).toBeVisible({ timeout: 10000 });
     
-    // 3. Verificar que el usuario regular fue invalidado intentando una acción protegida
+    // 3. El heartbeat de 3s detectará la revocación automáticamente.
+    // Recargamos para disparar la verificación inmediata al montar ProtectedRoute.
     await userPage.reload();
-    await userPage.getByRole('button', { name: /Nueva mascota/i }).click();
-    await userPage.getByLabel(/Nombre \*/i).fill('Mascota Test Inval');
-    await userPage.getByLabel('Especie').click();
-    await userPage.getByRole('option', { name: /Perro/i }).click();
-    await userPage.getByLabel('Sexo').click();
-    await userPage.getByRole('option', { name: /Macho/i }).click();
-    await userPage.getByRole('button', { name: /Crear mascota/i }).click();
-    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 15000 });
+    // La verificación inmediata al montar ProtectedRoute detecta el 401 y redirige.
+    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 10000 });
 
     await userContext.close();
     await adminContext.close();

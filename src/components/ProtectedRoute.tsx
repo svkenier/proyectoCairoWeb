@@ -43,8 +43,11 @@ export default function ProtectedRoute({
       }
     };
 
-    // Latido cada 10 segundos
-    const intervalId = setInterval(checkSession, 10000);
+    // Verificación inmediata al montar o al volver a autenticarse
+    checkSession();
+
+    // Latido cada 3 segundos para respuesta casi en tiempo real
+    const intervalId = setInterval(checkSession, 3000);
 
     // Revisión inmediata al recuperar el foco de la pestaña
     const handleVisibilityChange = () => {
