@@ -1,122 +1,150 @@
 import { test, expect } from '@playwright/test';
+import crypto from 'crypto';
 
-test.describe('Ciclo CRUD en Panel Administrativo (Mocked)', () => {
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const SUPERADMIN = process.env.SUPERADMIN_USERNAME || 'svkenier';
 
-  test.beforeEach(async ({ page }) => {
-    // Mock login endpoint
-    await page.route('**/api/auth/login', async route => {
-      await route.fulfill({
-        status: 200,
-        json: { token: 'fake-jwt-token', user: { username: 'admin', role: 'superadmin' } }
+function base64url(str: string) {
+  return Buffer.from(str).toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function generateToken(username: string, role: string, tokenVersion: number = 1) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = { sub: username, role, tokenVersion, exp: Math.floor(Date.now() / 1000) + 8 * 3600 };
+  const encodedHeader = base64url(JSON.stringify(header));
+  const encodedPayload = base64url(JSON.stringify(payload));
+  const signatureInput = `${encodedHeader}.${encodedPayload}`;
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(signatureInput).digest('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return `${signatureInput}.${signature}`;
+}
+
+test.describe('Ciclo CRUD en Panel Administrativo (Real sobre staging)', () => {
+  const testPassword = 'TestPassword123!';
+  let testUser = '';
+
+  const createdTestUsers: string[] = [];
+  const createdTestPets: string[] = [];
+  const createdTestAnnouncements: string[] = [];
+
+  // Utilidad para limpiar usuarios de prueba
+  async function cleanupUsers(requestCtx) {
+    if (createdTestUsers.length === 0) return;
+    const adminToken = generateToken(SUPERADMIN, 'superadmin');
+    for (const user of createdTestUsers) {
+      await requestCtx.delete('/api/users/delete', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { target_username: user }
       });
-    });
+    }
+  }
 
-    // Mock initial data fetch for pets and announcements
-    await page.route('**/api/public/pets', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, json: { mascotas: [] } });
-      }
-    });
+  // Utilidad para limpiar mascotas y anuncios de GitHub
+  async function cleanupGitHubData(requestCtx) {
+    const adminToken = generateToken(SUPERADMIN, 'superadmin');
+    
+    // Limpiar Mascotas
+    for (const petId of createdTestPets) {
+      await requestCtx.delete('/api/pets', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { id: petId }
+      });
+    }
 
-    await page.route('**/api/announcements', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, json: { anuncios: [] } });
-      } else if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { ok: true } });
-      } else if (route.request().method() === 'DELETE') {
-        await route.fulfill({ status: 200, json: { ok: true } });
-      }
-    });
+    // Limpiar Anuncios
+    for (const announcementId of createdTestAnnouncements) {
+      await requestCtx.delete('/api/announcements', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { id: announcementId }
+      });
+    }
+  }
 
-    await page.route('**/api/pets', async route => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { ok: true } });
-      } else if (route.request().method() === 'DELETE') {
-        await route.fulfill({ status: 200, json: { ok: true } });
-      }
+  test.beforeEach(async ({ request }) => {
+    testUser = `admin_test_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const adminToken = generateToken(SUPERADMIN, 'superadmin');
+    
+    // Crear el usuario admin para la prueba
+    const res = await request.post('/api/users/create', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: { username: testUser, password: testPassword, role: 'encargado' }
     });
+    
+    if (res.ok()) {
+      if (!createdTestUsers.includes(testUser)) createdTestUsers.push(testUser);
+    } else {
+      console.log('Error creating test admin user:', await res.text());
+    }
+    expect(res.ok()).toBeTruthy();
   });
 
-  test('Permite crear y luego simular el listado de una mascota y anuncio', async ({ page }) => {
-    // 1. Iniciar sesión
+  test.afterAll(async ({ request }) => {
+    try {
+      await cleanupGitHubData(request);
+      await cleanupUsers(request);
+    } finally {
+      createdTestUsers.length = 0;
+      createdTestPets.length = 0;
+      createdTestAnnouncements.length = 0;
+    }
+  });
+
+  test('Permite crear y luego visualizar una mascota y anuncio en entorno real', async ({ page }) => {
+    test.setTimeout(120000); // Dar más tiempo para las operaciones reales contra la API de GitHub
+
+    // 1. Iniciar sesión con el usuario real de prueba
     await page.goto('/login');
-    await page.getByLabel(/Usuario/i).fill('admin');
-    await page.getByLabel(/Contraseña/i).fill('password123');
+    await page.getByLabel(/Usuario/i).fill(testUser);
+    await page.getByLabel(/Contraseña/i).fill(testPassword);
     await page.getByRole('button', { name: /Ingresar/i }).click();
 
     // Debe llevarnos al panel admin
-    await expect(page).toHaveURL(/.*\/admin/);
+    await expect(page).toHaveURL(/.*\/admin/, { timeout: 15000 });
     await expect(page.getByRole('heading', { name: /Panel de Administración/i })).toBeVisible();
 
-    // 2. Verificar Empty State en Mascotas
-    // Hay dos elementos (desktop/mobile), verificamos que al menos uno esté en el DOM (Playwright maneja la visibilidad en strict mode usando assertions)
-    await expect(page.getByText(/No hay mascotas registradas/i).first()).toBeAttached();
-
-    // 3. Crear una Mascota (MOCK)
+    // 2. Crear una Mascota (Real API)
+    const uniquePetName = `Firulais Test ${Date.now()}`;
     await page.getByRole('button', { name: /Nueva mascota/i }).click();
-    await page.getByLabel(/Nombre \*/i).fill('Firulais Test');
-
-    // Llenar campos requeridos por Yup/Formik
+    await page.getByLabel(/Nombre \*/i).fill(uniquePetName);
     await page.getByRole('combobox', { name: /Especie/i }).click();
     await page.getByRole('option', { name: 'Perro' }).click();
-    
     await page.getByRole('combobox', { name: /Sexo/i }).click();
     await page.getByRole('option', { name: 'Macho' }).click();
     
-    // Interceptar la siguiente llamada a GET /pets para que devuelva la mascota creada
-    await page.route('**/api/public/pets', async route => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          mascotas: [{
-            id: 'firulais-test',
-            nombre: 'Firulais Test',
-            especie: 'perro',
-            estado: 'en_adopcion',
-            destacado: false,
-            created_at: new Date().toISOString()
-          }]
-        }
-      });
-    });
-
+    // Esperar a que la petición a GitHub termine exitosamente y obtener el ID asignado
+    const createPetPromise = page.waitForResponse(res => res.url().includes('/api/pets') && res.status() === 201);
     await page.getByRole('button', { name: /Crear mascota/i }).click();
+    
+    const petResponse = await createPetPromise;
+    const petData = await petResponse.json();
+    if (petData.pet?.id) {
+      createdTestPets.push(petData.pet.id);
+    }
 
-    // Verificar que aparece en la tabla (o tarjeta)
-    await expect(page.getByText('Firulais Test').first()).toBeAttached();
+    // Verificar que aparece en la tabla/UI
+    await expect(page.getByText(uniquePetName).first()).toBeAttached({ timeout: 20000 });
 
-    // 4. Cambiar a Pestaña Anuncios
+    // 3. Cambiar a Pestaña Anuncios
     await page.getByRole('tab', { name: /Eventos y Anuncios/i }).click();
-    await expect(page.getByText(/No hay anuncios/i).first()).toBeAttached();
 
-    // 5. Crear Anuncio (MOCK)
+    // 4. Crear Anuncio (Real API)
+    const uniqueAnnouncementTitle = `Jornada de Adopción Test ${Date.now()}`;
     await page.getByRole('button', { name: /Nuevo Anuncio/i }).click();
-    await page.getByLabel(/Título/i).fill('Jornada de Adopción Test');
+    await page.getByLabel(/Título/i).fill(uniqueAnnouncementTitle);
     await page.getByLabel(/Descripción/i).fill('Ven a adoptar a tu nuevo mejor amigo.');
 
-    await page.route('**/api/announcements', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          json: {
-            announcements: [{
-              id: 'anuncio-test',
-              title: 'Jornada de Adopción Test',
-              description: 'Contenido de prueba',
-              type: 'evento',
-              is_active: true,
-              created_at: new Date().toISOString()
-            }]
-          }
-        });
-      } else if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 201, json: { ok: true } });
-      }
-    });
-
+    const createAnnouncePromise = page.waitForResponse(res => res.url().includes('/api/announcements') && res.status() === 201);
     await page.getByRole('button', { name: /Crear anuncio/i }).click();
     
+    const announceResponse = await createAnnouncePromise;
+    const announceData = await announceResponse.json();
+    if (announceData.announcement?.id) {
+      createdTestAnnouncements.push(announceData.announcement.id);
+    }
+
     // Verificar que el anuncio creado aparece
-    await expect(page.getByText('Jornada de Adopción Test').first()).toBeAttached();
+    await expect(page.getByText(uniqueAnnouncementTitle).first()).toBeAttached({ timeout: 20000 });
   });
 });
