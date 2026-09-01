@@ -43,12 +43,18 @@ export async function getAuthPayload(req: VercelRequest): Promise<JWTPayload | n
   if (!token) return null;
   try {
     const payload = verifyToken(token);
-    // Verificar si el tokenVersion coincide con el de la base de datos
+    // Verificar si el tokenVersion coincide con el de la base de datos.
+    // Usamos 1 como fallback solo si el campo es undefined en AMBOS lados
+    // (compatibilidad con tokens/usuarios legacy). Si Redis tiene un valor
+    // explícito mayor que 1, el JWT antiguo sin el campo quedará bloqueado.
     const user = await getUser(payload.sub);
-    const dbVersion = user?.tokenVersion || 1;
-    const payloadVersion = payload.tokenVersion || 1;
+    if (!user) return null; // El usuario fue eliminado de Redis
+
+    const dbVersion      = user.tokenVersion      ?? 1;
+    const payloadVersion = payload.tokenVersion   ?? 1;
+
     if (payloadVersion !== dbVersion) {
-      return null;
+      return null; // Sesión revocada: tokenVersion no coincide
     }
     return payload;
   } catch {

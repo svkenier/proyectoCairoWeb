@@ -78,6 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     created_by:    payload.sub,
     created_at:    now,
     last_login:    null,
+    tokenVersion:  1, // Siempre explícito para que force-logout funcione correctamente
   };
 
   await setUser(newUser);

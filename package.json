@@ -13,7 +13,8 @@
     "test:report": "playwright show-report",
     "db:clean-test-data": "npx tsx scripts/purge-test-data.ts",
     "deploy:prod": "vercel --prod --yes",
-    "deploy:webhook": "npx tsx scripts/deploy-webhook.ts"
+    "deploy:webhook": "npx tsx scripts/deploy-webhook.ts",
+    "db:migrate-token-version": "npx tsx scripts/migrate-token-version.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

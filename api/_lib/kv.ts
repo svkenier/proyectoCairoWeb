@@ -103,13 +103,10 @@ export async function listUsers(): Promise<PublicUser[]> {
 
 /**
  * Actualiza el campo last_login de un usuario.
- * Preserva el TTL actual si existe.
+ * Usa updateUserPreservingTTL para NO sobreescribir tokenVersion ni el TTL activo.
  */
 export async function updateLastLogin(username: string): Promise<void> {
-  const user = await getUser(username);
-  if (!user) return;
-  user.last_login = new Date().toISOString();
-  await setUser(user); // sin TTL: la llamada a cancelTTL se hace por separado
+  await updateUserPreservingTTL(username, { last_login: new Date().toISOString() });
 }
 
 // ─── Caché Pública ────────────────────────────────────────────────────────────
