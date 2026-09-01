@@ -18,7 +18,7 @@ import { getUser, setUser } from '../kv.js';
 import { ROLE_LEVEL, canManage } from '../../../src/types/user.js';
 
 const BCRYPT_ROUNDS        = 12;
-const SUPERADMIN_USERNAME  = process.env['SUPERADMIN_USERNAME'] ?? 'superadmin';
+const SUPERADMIN_USERNAME  = process.env['SUPERADMIN_USERNAME'] ?? 'svkenier';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
