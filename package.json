@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "db:clean-test-data": "npx tsx scripts/purge-test-data.ts",
+    "deploy:prod": "vercel --prod --yes",
+    "deploy:webhook": "npx tsx scripts/deploy-webhook.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

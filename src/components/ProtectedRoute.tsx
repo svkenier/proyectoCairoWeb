@@ -8,10 +8,12 @@
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_LEVEL, type UserRole } from '@/types/user';
+import { get } from '@/api/client';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -29,6 +31,34 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isLoading, isAuthenticated, user } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const checkSession = async () => {
+      try {
+        await get('/auth/session');
+      } catch {
+        // El interceptor de Axios (client.ts) captura el 401, limpia la sesión y redirige
+      }
+    };
+
+    // Latido cada 10 segundos
+    const intervalId = setInterval(checkSession, 10000);
+
+    // Revisión inmediata al recuperar el foco de la pestaña
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated]);
 
   // Mientras se restaura la sesión desde localStorage
   if (isLoading) {
