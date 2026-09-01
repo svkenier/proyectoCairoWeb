@@ -15,7 +15,8 @@
 import { Redis } from '@upstash/redis';
 import type { KVUser, PublicUser } from '../../src/types/user.js';
 
-const TTL_30_DAYS = 30 * 24 * 60 * 60; // segundos
+export const TTL_30_DAYS = 30 * 24 * 60 * 60; // 2,592,000 segundos
+export const TTL_6_MONTHS = 180 * 24 * 60 * 60; // 15,552,000 segundos
 
 /** Instancia del cliente Redis usando las variables de entorno de Vercel. */
 export const redis = new Redis({
@@ -50,8 +51,8 @@ export async function deleteUser(username: string): Promise<void> {
 }
 
 /** Activa el TTL de 30 días en la cuenta de un usuario (logout). */
-export async function activateTTL(username: string): Promise<void> {
-  await redis.expire(userKey(username), TTL_30_DAYS);
+export async function activateTTL(username: string, durationSeconds: number = TTL_30_DAYS): Promise<void> {
+  await redis.expire(userKey(username), durationSeconds);
 }
 
 /**
