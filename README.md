@@ -42,6 +42,7 @@ El proyecto utiliza tecnologías modernas para garantizar rendimiento, escalabil
 - **Bundler:** [Vite](https://vitejs.dev/)
 - **UI & Componentes:** [Material UI (MUI) v6](https://mui.com/) + `@emotion/react`
 - **Enrutamiento:** [React Router DOM v7](https://reactrouter.com/)
+- **Formularios & Validación:** [Formik](https://formik.org/) + [Yup](https://github.com/jquense/yup)
 - **Manejo de Estado Remoto:** [TanStack Query v5](https://tanstack.com/query)
 - **Fechas y Calendarios:** `@mui/x-date-pickers` + `dayjs`
 

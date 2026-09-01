@@ -15,6 +15,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -74,16 +76,35 @@ interface CreateUserDialogProps {
   onCreated:   () => void;
 }
 
+const createUserSchema = Yup.object({
+  username: Yup.string()
+    .matches(/^[a-z0-9_]+$/, 'Solo letras minúsculas, números y _')
+    .required('El usuario es obligatorio'),
+  password: Yup.string()
+    .min(8, 'Debe tener al menos 8 caracteres')
+    .required('La contraseña es obligatoria'),
+  role: Yup.string().required('El rol es obligatorio'),
+});
+
 function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDialogProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole]         = useState<UserRole>('voluntario');
   const [error, setError]       = useState('');
 
+  const formik = useFormik({
+    initialValues: {
+      username: '',
+      password: '',
+      role: 'voluntario' as UserRole,
+    },
+    validationSchema: createUserSchema,
+    onSubmit: () => {
+      mutation.mutate();
+    },
+  });
+
   const mutation = useMutation({
-    mutationFn: () => post('/users/create', { username, password, role }),
-    onSuccess:  () => { onCreated(); onClose(); setUsername(''); setPassword(''); setRole('voluntario'); },
+    mutationFn: () => post('/users/create', formik.values),
+    onSuccess:  () => { onCreated(); onClose(); formik.resetForm(); },
     onError:    (e: unknown) => setError(formatApiError(e, 'Error al crear usuario')),
   });
 
@@ -100,19 +121,28 @@ function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDia
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
-            label="Usuario"
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+            label="Usuario *"
+            name="username"
+            value={formik.values.username}
+            onChange={(e) => {
+              const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+              formik.setFieldValue('username', val);
+            }}
+            onBlur={formik.handleBlur}
+            error={formik.touched.username && Boolean(formik.errors.username)}
+            helperText={(formik.touched.username && formik.errors.username) || "Solo letras minúsculas, números y _"}
             fullWidth size="small"
-            helperText="Solo letras minúsculas, números y _"
           />
           <TextField
-            label="Contraseña"
+            label="Contraseña *"
+            name="password"
             type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.password && Boolean(formik.errors.password)}
+            helperText={(formik.touched.password && formik.errors.password) || "Mínimo 8 caracteres"}
             fullWidth size="small"
-            helperText="Mínimo 8 caracteres"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -123,9 +153,9 @@ function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDia
               ),
             }}
           />
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" error={formik.touched.role && Boolean(formik.errors.role)}>
             <InputLabel>Rol</InputLabel>
-            <Select value={role} label="Rol" onChange={(e) => setRole(e.target.value as UserRole)}>
+            <Select name="role" value={formik.values.role} label="Rol" onChange={formik.handleChange} onBlur={formik.handleBlur}>
               {availableRoles.map((r) => (
                 <MenuItem key={r} value={r} sx={{ textTransform: 'capitalize' }}>{r}</MenuItem>
               ))}
@@ -134,11 +164,11 @@ function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDia
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit">Cancelar</Button>
+        <Button onClick={() => { onClose(); formik.resetForm(); setError(''); }} color="inherit">Cancelar</Button>
         <Button
           variant="contained"
-          disabled={!username || !password || mutation.isPending}
-          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || formik.isSubmitting}
+          onClick={() => formik.handleSubmit()}
           startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
           Crear
@@ -153,21 +183,36 @@ interface ResetPasswordDialogProps {
   onClose: () => void;
 }
 
+const resetPasswordSchema = Yup.object({
+  password: Yup.string()
+    .min(8, 'Debe tener al menos 8 caracteres')
+    .required('La contraseña es obligatoria'),
+});
+
 function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]       = useState('');
   const [done, setDone]         = useState(false);
 
+  const formik = useFormik({
+    initialValues: {
+      password: '',
+    },
+    validationSchema: resetPasswordSchema,
+    onSubmit: () => {
+      mutation.mutate();
+    },
+  });
+
   const mutation = useMutation({
-    mutationFn: () => post('/users/reset-password', { target_username: target?.username, new_password: password }),
+    mutationFn: () => post('/users/reset-password', { target_username: target?.username, new_password: formik.values.password }),
     onSuccess:  () => setDone(true),
     onError:    (e: unknown) => setError(formatApiError(e, 'Error al resetear la contraseña')),
   });
 
   const handleClose = () => {
     onClose();
-    setPassword('');
+    formik.resetForm();
     setError('');
     setDone(false);
   };
@@ -191,11 +236,14 @@ function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
             </Typography>
             <TextField
               type={showPassword ? 'text' : 'password'}
-              label="Nueva contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              label="Nueva contraseña *"
+              name="password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password && Boolean(formik.errors.password)}
+              helperText={(formik.touched.password && formik.errors.password) || "Mínimo 8 caracteres"}
               fullWidth size="small"
-              helperText="Mínimo 8 caracteres"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -215,8 +263,8 @@ function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
           <Button
             variant="contained"
             color="warning"
-            disabled={password.length < 8 || mutation.isPending}
-            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || formik.isSubmitting}
+            onClick={() => formik.handleSubmit()}
             startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
             Resetear

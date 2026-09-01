@@ -2,6 +2,17 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Páginas Públicas y Navegación', () => {
 
+  test.beforeEach(async ({ page }) => {
+    // Mock settings and pets to avoid ECONNREFUSED when vercel dev is not running
+    await page.route('**/api/settings', async route => {
+      await route.fulfill({ status: 200, json: {} });
+    });
+    
+    await page.route('**/api/public/pets', async route => {
+      await route.fulfill({ status: 200, json: { mascotas: [] } });
+    });
+  });
+
   test('La página de Inicio (/) carga sin errores y muestra componentes clave', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));

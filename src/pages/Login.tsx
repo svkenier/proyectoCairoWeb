@@ -5,8 +5,10 @@
  * Tras login exitoso, redirige a /admin (o a la ruta que intentaba acceder).
  */
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -33,34 +35,44 @@ interface LocationState {
   from?: { pathname: string };
 }
 
+const validationSchema = Yup.object({
+  username: Yup.string()
+    .matches(/^[a-z0-9_]+$/, 'Solo letras minúsculas, números y guiones bajos')
+    .min(2, 'Debe tener al menos 2 caracteres')
+    .required('El usuario es obligatorio'),
+  password: Yup.string().required('La contraseña es obligatoria'),
+});
+
 export default function Login() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { login } = useAuth();
   const from = (location.state as LocationState)?.from?.pathname ?? '/admin';
 
-  const [username, setUsername]   = useState('');
-  const [password, setPassword]   = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error,    setError]      = useState('');
-  const [loading,  setLoading]    = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!username.trim() || !password) return;
+  const formik = useFormik({
+    initialValues: {
+      username: '',
+      password: '',
+    },
+    validationSchema: validationSchema,
+    onSubmit: async (values) => {
+      setLoading(true);
+      setError('');
 
-    setLoading(true);
-    setError('');
-
-    try {
-      await login({ username: username.trim().toLowerCase(), password });
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError(formatApiError(err, 'No se pudo iniciar sesión. Credenciales no válidas.'));
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        await login({ username: values.username.trim().toLowerCase(), password: values.password });
+        navigate(from, { replace: true });
+      } catch (err) {
+        setError(formatApiError(err, 'No se pudo iniciar sesión. Credenciales no válidas.'));
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
 
   return (
     <Box
@@ -109,14 +121,17 @@ export default function Login() {
               </Alert>
             )}
 
-            <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Box component="form" onSubmit={formik.handleSubmit} noValidate>
               <TextField
                 id="login-username"
+                name="username"
                 label="Usuario"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
+                value={formik.values.username}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.username && Boolean(formik.errors.username)}
+                helperText={formik.touched.username && formik.errors.username}
                 fullWidth
                 autoComplete="username"
                 autoFocus
@@ -134,11 +149,14 @@ export default function Login() {
 
               <TextField
                 id="login-password"
+                name="password"
                 label="Contraseña"
                 type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.password && Boolean(formik.errors.password)}
+                helperText={formik.touched.password && formik.errors.password}
                 fullWidth
                 autoComplete="current-password"
                 size="small"
@@ -171,7 +189,7 @@ export default function Login() {
                 variant="contained"
                 fullWidth
                 size="large"
-                disabled={loading || !username.trim() || !password}
+                disabled={loading || !formik.values.username.trim() || !formik.values.password}
                 sx={{ borderRadius: 0, py: 1.2 }}
               >
                 {loading

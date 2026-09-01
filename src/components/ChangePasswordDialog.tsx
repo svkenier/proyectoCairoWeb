@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { useMutation } from '@tanstack/react-query';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -24,11 +26,16 @@ interface ChangePasswordDialogProps {
   onClose: () => void;
 }
 
+const validationSchema = Yup.object({
+  currentPassword: Yup.string().required('La contraseña actual es obligatoria'),
+  newPassword: Yup.string().min(8, 'Debe tener al menos 8 caracteres').required('La nueva contraseña es obligatoria'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('newPassword')], 'Las contraseñas no coinciden')
+    .required('Debes confirmar la contraseña'),
+});
+
 export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProps) {
   const { user } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -37,13 +44,23 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const formik = useFormik({
+    initialValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    validationSchema,
+    onSubmit: () => {
+      mutation.mutate();
+    },
+  });
+
   const mutation = useMutation({
-    mutationFn: () => post('/users/change-password', { current_password: currentPassword, new_password: newPassword }),
+    mutationFn: () => post('/users/change-password', { current_password: formik.values.currentPassword, new_password: formik.values.newPassword }),
     onSuccess: () => {
       setSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      formik.resetForm();
     },
     onError: (e: unknown) => setError(formatApiError(e, 'Error al cambiar la contraseña')),
   });
@@ -52,9 +69,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
     onClose();
     // Reset state after dialog closes animation
     setTimeout(() => {
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      formik.resetForm();
       setShowCurrent(false);
       setShowNew(false);
       setShowConfirm(false);
@@ -66,18 +81,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
   const handleSubmit = () => {
     setError('');
     setSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setError('La nueva contraseña y la confirmación no coinciden.');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError('La nueva contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
-
-    mutation.mutate();
+    formik.handleSubmit();
   };
 
   const theme = useTheme();
@@ -101,9 +105,13 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
 
             <TextField
               label="Contraseña actual"
+              name="currentPassword"
               type={showCurrent ? 'text' : 'password'}
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              value={formik.values.currentPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.currentPassword && Boolean(formik.errors.currentPassword)}
+              helperText={formik.touched.currentPassword && (formik.errors.currentPassword as string)}
               fullWidth size="small"
               InputProps={{
                 endAdornment: (
@@ -118,11 +126,14 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
 
             <TextField
               label="Nueva contraseña"
+              name="newPassword"
               type={showNew ? 'text' : 'password'}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              value={formik.values.newPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.newPassword && Boolean(formik.errors.newPassword)}
+              helperText={(formik.touched.newPassword && (formik.errors.newPassword as string)) || "Mínimo 8 caracteres"}
               fullWidth size="small"
-              helperText="Mínimo 8 caracteres"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -136,12 +147,14 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
 
             <TextField
               label="Confirmar nueva contraseña"
+              name="confirmPassword"
               type={showConfirm ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={formik.values.confirmPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth size="small"
-              error={Boolean(confirmPassword && newPassword !== confirmPassword)}
-              helperText={confirmPassword && newPassword !== confirmPassword ? "Las contraseñas no coinciden" : ""}
+              error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+              helperText={formik.touched.confirmPassword && (formik.errors.confirmPassword as string)}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -161,7 +174,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
           <Button
             variant="contained"
             color="primary"
-            disabled={!currentPassword || !newPassword || !confirmPassword || mutation.isPending}
+            disabled={mutation.isPending || formik.isSubmitting}
             onClick={handleSubmit}
             startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >

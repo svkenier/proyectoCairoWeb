@@ -3,6 +3,8 @@
  */
 
 import { useState, type ChangeEvent } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -53,15 +55,25 @@ interface FormState {
   is_active:   boolean;
 }
 
-const EMPTY: FormState = {
+const EMPTY = {
   title: '',
-  type: 'general',
+  type: 'general' as AnnouncementType,
   description: '',
   date: new Date().toISOString().split('T')[0],
   time: '',
   location: '',
   is_active: true,
 };
+
+const validationSchema = Yup.object({
+  title: Yup.string().required('El título es obligatorio'),
+  type: Yup.string().required('El tipo es obligatorio'),
+  description: Yup.string().required('La descripción es obligatoria'),
+  date: Yup.string().required('La fecha es obligatoria'),
+  time: Yup.string(),
+  location: Yup.string(),
+  is_active: Yup.boolean(),
+});
 
 // ─── Helpers de imagen ────────────────────────────────────────────────────────
 
@@ -89,8 +101,8 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
   const isEdit = Boolean(initial?.id);
   const qc     = useQueryClient();
 
-  const [form, setForm] = useState<FormState>(() =>
-    initial
+  const formik = useFormik({
+    initialValues: initial
       ? {
           title:       initial.title,
           type:        initial.type,
@@ -100,16 +112,18 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           location:    initial.location ?? '',
           is_active:   initial.is_active,
         }
-      : EMPTY
-  );
+      : EMPTY,
+    enableReinitialize: true,
+    validationSchema,
+    onSubmit: () => {
+      mutation.mutate();
+    },
+  });
 
   const [preview, setPreview] = useState<string>(initial?.image_url ?? '');
   const [base64, setBase64]   = useState<string>('');
   const [imgLoading, setImgLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
-    setForm((p) => ({ ...p, [k]: v }));
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,7 +146,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
     mutationFn: () => {
       const payload = {
         ...(isEdit && initial?.id ? { id: initial.id } : {}),
-        ...form,
+        ...formik.values,
         ...(base64 ? { image_base64: base64 } : {}),
         ...(isEdit ? { image_url: initial?.image_url } : {}),
       };
@@ -155,11 +169,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
 
   const handleSubmit = () => {
     setError('');
-    if (!form.title.trim() || !form.description.trim()) {
-      setError('El título y la descripción son requeridos');
-      return;
-    }
-    mutation.mutate();
+    formik.handleSubmit();
   };
 
   const theme = useTheme();
@@ -219,7 +229,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
                   <Box
                     component="img"
                     src={preview}
-                    alt={form.title ? `Flyer de ${form.title}` : 'Flyer del anuncio'}
+                    alt={formik.values.title ? `Flyer de ${formik.values.title}` : 'Flyer del anuncio'}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                     sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
@@ -258,16 +268,20 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
 
           <Grid size={{ xs: 12, sm: 8 }}>
             <TextField
-              label="Título"
-              value={form.title}
-              onChange={(e) => set('title', e.target.value)}
-              fullWidth size="small" required
+              label="Título *"
+              name="title"
+              value={formik.values.title}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.title && Boolean(formik.errors.title)}
+              helperText={formik.touched.title && (formik.errors.title as string)}
+              fullWidth size="small"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" error={formik.touched.type && Boolean(formik.errors.type)}>
               <InputLabel>Tipo</InputLabel>
-              <Select value={form.type} label="Tipo" onChange={(e) => set('type', e.target.value as AnnouncementType)}>
+              <Select name="type" value={formik.values.type} label="Tipo" onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <MenuItem value="vacunacion">Vacunación</MenuItem>
                 <MenuItem value="esterilizacion">Esterilización</MenuItem>
                 <MenuItem value="adopcion">Jornada Adopción</MenuItem>
@@ -282,9 +296,18 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
               <DatePicker
                 label="Fecha"
                 format="DD/MM/YYYY"
-                value={form.date ? dayjs(form.date, 'YYYY-MM-DD') : null}
-                onChange={(newValue) => set('date', newValue ? newValue.format('YYYY-MM-DD') : '')}
-                slotProps={{ textField: { fullWidth: true, size: 'small', required: true } }}
+                value={formik.values.date ? dayjs(formik.values.date, 'YYYY-MM-DD') : null}
+                onChange={(newValue) => formik.setFieldValue('date', newValue ? newValue.format('YYYY-MM-DD') : '')}
+                slotProps={{ 
+                  textField: { 
+                    fullWidth: true, 
+                    size: 'small', 
+                    name: 'date',
+                    onBlur: formik.handleBlur,
+                    error: formik.touched.date && Boolean(formik.errors.date),
+                    helperText: formik.touched.date && (formik.errors.date as string)
+                  } 
+                }}
               />
             </LocalizationProvider>
           </Grid>
@@ -292,8 +315,10 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
             <TextField
               label="Hora (Opcional)"
               placeholder="Ej. 9:00 AM - 2:00 PM"
-              value={form.time}
-              onChange={(e) => set('time', e.target.value)}
+              name="time"
+              value={formik.values.time}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth size="small"
             />
           </Grid>
@@ -301,25 +326,31 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           <Grid size={{ xs: 12 }}>
             <TextField
               label="Ubicación (Opcional)"
-              value={form.location}
-              onChange={(e) => set('location', e.target.value)}
+              name="location"
+              value={formik.values.location}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth size="small"
             />
           </Grid>
 
           <Grid size={{ xs: 12 }}>
             <TextField
-              label="Descripción"
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
-              fullWidth multiline rows={3} size="small" required
+              label="Descripción *"
+              name="description"
+              value={formik.values.description}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.description && Boolean(formik.errors.description)}
+              helperText={formik.touched.description && (formik.errors.description as string)}
+              fullWidth multiline rows={3} size="small"
             />
           </Grid>
 
           <Grid size={{ xs: 12 }}>
             <FormControlLabel
-              control={<Switch checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} color="success" />}
-              label={form.is_active ? "Activo (Visible en Home)" : "Inactivo (Oculto)"}
+              control={<Switch name="is_active" checked={formik.values.is_active} onChange={formik.handleChange} color="success" />}
+              label={formik.values.is_active ? "Activo (Visible en Home)" : "Inactivo (Oculto)"}
             />
           </Grid>
         </Grid>
@@ -332,7 +363,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={mutation.isPending || imgLoading || !form.title.trim()}
+          disabled={mutation.isPending || imgLoading || formik.isSubmitting}
           startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           sx={{ borderRadius: 0 }}
         >

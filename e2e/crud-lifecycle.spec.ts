@@ -55,6 +55,13 @@ test.describe('Ciclo CRUD en Panel Administrativo (Mocked)', () => {
     // 3. Crear una Mascota (MOCK)
     await page.getByRole('button', { name: /Nueva mascota/i }).click();
     await page.getByLabel(/Nombre \*/i).fill('Firulais Test');
+
+    // Llenar campos requeridos por Yup/Formik
+    await page.getByRole('combobox', { name: /Especie/i }).click();
+    await page.getByRole('option', { name: 'Perro' }).click();
+    
+    await page.getByRole('combobox', { name: /Sexo/i }).click();
+    await page.getByRole('option', { name: 'Macho' }).click();
     
     // Interceptar la siguiente llamada a GET /pets para que devuelva la mascota creada
     await page.route('**/api/public/pets', async route => {

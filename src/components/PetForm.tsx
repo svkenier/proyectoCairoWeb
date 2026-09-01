@@ -10,6 +10,8 @@
  */
 
 import { useState, useCallback, type ChangeEvent } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -64,12 +66,28 @@ interface FormState {
   desparasitado:   boolean;
 }
 
-const EMPTY: FormState = {
+const EMPTY = {
   nombre: '', especie: '', raza: '', sexo: '',
   tamano: '', edad_aproximada: '', peso_kg: '',
   descripcion: '', estado: 'disponible',
   destacado: false, vacunado: false, esterilizado: false, desparasitado: false,
 };
+
+const validationSchema = Yup.object({
+  nombre: Yup.string().required('El nombre es obligatorio'),
+  especie: Yup.string().required('La especie es obligatoria'),
+  sexo: Yup.string().required('El sexo es obligatorio'),
+  raza: Yup.string(),
+  tamano: Yup.string(),
+  edad_aproximada: Yup.string(),
+  peso_kg: Yup.number().typeError('Debe ser un número').min(0, 'No puede ser negativo').nullable().transform((v, o) => o === '' ? null : v),
+  descripcion: Yup.string(),
+  estado: Yup.string().required('El estado es obligatorio'),
+  destacado: Yup.boolean(),
+  vacunado: Yup.boolean(),
+  esterilizado: Yup.boolean(),
+  desparasitado: Yup.boolean(),
+});
 
 // ─── Helpers de imagen ────────────────────────────────────────────────────────
 
@@ -183,8 +201,8 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
   const isEdit = Boolean(initial?.id);
   const qc     = useQueryClient();
 
-  const [form, setForm] = useState<FormState>(() =>
-    initial
+  const formik = useFormik({
+    initialValues: initial
       ? {
           nombre:          initial.nombre,
           especie:         initial.especie         ?? '',
@@ -192,7 +210,7 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           sexo:            initial.sexo            ?? '',
           tamano:          initial.tamano          ?? '',
           edad_aproximada: initial.edad_aproximada ?? '',
-          peso_kg:         String(initial.peso_kg  ?? ''),
+          peso_kg:         initial.peso_kg !== undefined ? String(initial.peso_kg) : '',
           descripcion:     initial.descripcion     ?? '',
           estado:          initial.estado          ?? 'disponible',
           destacado:       initial.destacado       ?? false,
@@ -200,8 +218,13 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           esterilizado:    initial.esterilizado    ?? false,
           desparasitado:   initial.desparasitado   ?? false,
         }
-      : EMPTY
-  );
+      : EMPTY,
+    enableReinitialize: true,
+    validationSchema,
+    onSubmit: () => {
+      mutation.mutate();
+    },
+  });
 
   // Imágenes
   const [mainPreview,  setMainPreview]  = useState<string>(initial?.imagen_principal ?? '');
@@ -209,9 +232,6 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
   const [extraFiles,   setExtraFiles]   = useState<{ preview: string; base64: string }[]>([]);
   const [imgLoading,   setImgLoading]   = useState(false);
   const [error,        setError]        = useState('');
-
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
-    setForm((p) => ({ ...p, [k]: v }));
 
   // ─── Procesamiento de imagen principal ────────────────────────────────────
 
@@ -248,8 +268,8 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
     mutationFn: () => {
       const payload = {
         ...(isEdit && initial?.id ? { id: initial.id } : {}),
-        ...form,
-        peso_kg: form.peso_kg ? parseFloat(form.peso_kg) : undefined,
+        ...formik.values,
+        peso_kg: formik.values.peso_kg ? parseFloat(formik.values.peso_kg as string) : undefined,
         ...(mainBase64 ? { imagen_principal_base64: mainBase64 } : {}),
         ...(extraFiles.length > 0
           ? { fotos_secundarias_base64: extraFiles.map((f) => f.base64) }
@@ -272,8 +292,7 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
 
   const handleSubmit = () => {
     setError('');
-    if (!form.nombre.trim()) { setError('El nombre es requerido'); return; }
-    mutation.mutate();
+    formik.handleSubmit();
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -314,15 +333,19 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="Nombre *"
-              value={form.nombre}
-              onChange={(e) => set('nombre', e.target.value)}
-              fullWidth size="small" required
+              name="nombre"
+              value={formik.values.nombre}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.nombre && Boolean(formik.errors.nombre)}
+              helperText={formik.touched.nombre && (formik.errors.nombre as string)}
+              fullWidth size="small"
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Especie</InputLabel>
-              <Select value={form.especie} label="Especie" onChange={(e) => set('especie', e.target.value)}>
+            <FormControl fullWidth size="small" error={formik.touched.especie && Boolean(formik.errors.especie)}>
+              <InputLabel id="label-especie">Especie</InputLabel>
+              <Select labelId="label-especie" name="especie" value={formik.values.especie} label="Especie" onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <MenuItem value="">—</MenuItem>
                 <MenuItem value="perro">Perro</MenuItem>
                 <MenuItem value="gato">Gato</MenuItem>
@@ -331,9 +354,9 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
             </FormControl>
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Sexo</InputLabel>
-              <Select value={form.sexo} label="Sexo" onChange={(e) => set('sexo', e.target.value)}>
+            <FormControl fullWidth size="small" error={formik.touched.sexo && Boolean(formik.errors.sexo)}>
+              <InputLabel id="label-sexo">Sexo</InputLabel>
+              <Select labelId="label-sexo" name="sexo" value={formik.values.sexo} label="Sexo" onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <MenuItem value="">—</MenuItem>
                 <MenuItem value="macho">Macho</MenuItem>
                 <MenuItem value="hembra">Hembra</MenuItem>
@@ -343,15 +366,17 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           <Grid size={{ xs: 6, sm: 3 }}>
             <TextField
               label="Raza"
-              value={form.raza}
-              onChange={(e) => set('raza', e.target.value)}
+              name="raza"
+              value={formik.values.raza}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth size="small"
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>Tamaño</InputLabel>
-              <Select value={form.tamano} label="Tamaño" onChange={(e) => set('tamano', e.target.value)}>
+              <InputLabel id="label-tamano">Tamaño</InputLabel>
+              <Select labelId="label-tamano" name="tamano" value={formik.values.tamano} label="Tamaño" onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <MenuItem value="">—</MenuItem>
                 <MenuItem value="pequeno">Pequeño</MenuItem>
                 <MenuItem value="mediano">Mediano</MenuItem>
@@ -363,8 +388,10 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
             <TextField
               label="Edad aproximada"
               placeholder="ej: 2 años"
-              value={form.edad_aproximada}
-              onChange={(e) => set('edad_aproximada', e.target.value)}
+              name="edad_aproximada"
+              value={formik.values.edad_aproximada}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth size="small"
             />
           </Grid>
@@ -372,8 +399,12 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
             <TextField
               label="Peso (kg)"
               type="number"
-              value={form.peso_kg}
-              onChange={(e) => set('peso_kg', e.target.value)}
+              name="peso_kg"
+              value={formik.values.peso_kg}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.peso_kg && Boolean(formik.errors.peso_kg)}
+              helperText={formik.touched.peso_kg && (formik.errors.peso_kg as string)}
               fullWidth size="small"
               inputProps={{ min: 0, step: 0.1 }}
             />
@@ -388,9 +419,9 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
         </Typography>
         <Grid container spacing={2} mb={2}>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" error={formik.touched.estado && Boolean(formik.errors.estado)}>
               <InputLabel>Estado</InputLabel>
-              <Select value={form.estado} label="Estado" onChange={(e) => set('estado', e.target.value)}>
+              <Select name="estado" value={formik.values.estado} label="Estado" onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <MenuItem value="disponible">Disponible</MenuItem>
                 <MenuItem value="en_proceso">En proceso</MenuItem>
                 <MenuItem value="adoptado">Adoptado</MenuItem>
@@ -400,19 +431,19 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           <Grid size={{ xs: 12, sm: 8 }}>
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
               <FormControlLabel
-                control={<Switch checked={form.destacado} onChange={(e) => set('destacado', e.target.checked)} color="warning" />}
+                control={<Switch name="destacado" checked={formik.values.destacado} onChange={formik.handleChange} color="warning" />}
                 label="Destacado ⭐"
               />
               <FormControlLabel
-                control={<Switch checked={form.vacunado} onChange={(e) => set('vacunado', e.target.checked)} color="success" />}
+                control={<Switch name="vacunado" checked={formik.values.vacunado} onChange={formik.handleChange} color="success" />}
                 label="Vacunado"
               />
               <FormControlLabel
-                control={<Switch checked={form.esterilizado} onChange={(e) => set('esterilizado', e.target.checked)} color="success" />}
+                control={<Switch name="esterilizado" checked={formik.values.esterilizado} onChange={formik.handleChange} color="success" />}
                 label="Esterilizado"
               />
               <FormControlLabel
-                control={<Switch checked={form.desparasitado} onChange={(e) => set('desparasitado', e.target.checked)} color="success" />}
+                control={<Switch name="desparasitado" checked={formik.values.desparasitado} onChange={formik.handleChange} color="success" />}
                 label="Desparasitado"
               />
             </Box>
@@ -420,8 +451,10 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           <Grid size={{ xs: 12 }}>
             <TextField
               label="Descripción"
-              value={form.descripcion}
-              onChange={(e) => set('descripcion', e.target.value)}
+              name="descripcion"
+              value={formik.values.descripcion}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               fullWidth
               multiline
               rows={3}
@@ -494,7 +527,7 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={mutation.isPending || imgLoading || !form.nombre.trim()}
+          disabled={mutation.isPending || imgLoading || formik.isSubmitting}
           startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           sx={{ borderRadius: 0, px: 3 }}
         >
