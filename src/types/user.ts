@@ -64,6 +64,12 @@ export interface KVUser {
    * Se actualiza en cada llamada a `POST /api/auth/login`.
    */
   last_login?: string;
+
+  /**
+   * Versión del token para invalidación global de sesiones.
+   * Se incrementa al cambiar contraseñas o forzar cierre de sesión.
+   */
+  tokenVersion?: number;
 }
 
 // ─── Datos seguros para el Frontend ──────────────────────────────────────────
@@ -89,6 +95,8 @@ export interface JWTPayload {
   iat: number;
   /** Timestamp de expiración (Unix seconds). */
   exp: number;
+  /** Versión del token para validar contra base de datos. */
+  tokenVersion?: number;
 }
 
 // ─── Estado de Autenticación (contexto React) ─────────────────────────────────

@@ -4,6 +4,7 @@ import create from '../_lib/users/create.js';
 import del from '../_lib/users/delete.js';
 import list from '../_lib/users/list.js';
 import resetPassword from '../_lib/users/reset-password.js';
+import forceLogout from '../_lib/users/force-logout.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.query;
@@ -19,6 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return list(req, res);
     case 'reset-password':
       return resetPassword(req, res);
+    case 'force-logout':
+      return forceLogout(req, res);
     default:
       return res.status(404).json({ error: 'Ruta no encontrada' });
   }

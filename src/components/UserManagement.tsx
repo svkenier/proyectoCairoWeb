@@ -54,6 +54,7 @@ import { useTheme } from '@mui/material/styles';
 import PersonAddIcon  from '@mui/icons-material/PersonAdd';
 import LockResetIcon  from '@mui/icons-material/LockReset';
 import DeleteIcon     from '@mui/icons-material/Delete';
+import LogoutIcon     from '@mui/icons-material/Logout';
 import { useAuth } from '@/contexts/AuthContext';
 import { get, post, del, formatApiError } from '@/api/client';
 import { canManage, canCreateRole, ROLE_LEVEL } from '@/types/user';
@@ -285,6 +286,8 @@ export default function UserManagement() {
   const [resetTarget,   setResetTarget]   = useState<PublicUser | null>(null);
   const [deleteTarget,  setDeleteTarget]  = useState<PublicUser | null>(null);
   const [deleteError,   setDeleteError]   = useState('');
+  const [forceLogoutTarget, setForceLogoutTarget] = useState<PublicUser | null>(null);
+  const [forceLogoutError,  setForceLogoutError]  = useState('');
 
   const { data, isLoading, isError } = useQuery<{ users: PublicUser[] }>({
     queryKey: ['users-list'],
@@ -300,8 +303,16 @@ export default function UserManagement() {
     onError: (e: unknown) => setDeleteError(formatApiError(e, 'Error al eliminar usuario')),
   });
 
+  const forceLogoutMutation = useMutation({
+    mutationFn: (username: string) => post('/users/force-logout', { target_username: username }),
+    onSuccess:  () => {
+      setForceLogoutTarget(null);
+    },
+    onError: (e: unknown) => setForceLogoutError(formatApiError(e, 'Error al forzar el cierre de sesión')),
+  });
+
   const canActOn = (target: PublicUser) => {
-    if (!currentUser) return { canReset: false, canDelete: false, disabledReason: '' };
+    if (!currentUser) return { canReset: false, canDelete: false, canForceLogout: false, disabledReason: '' };
     
     const isMainOwner = currentUser.username === MAIN_OWNER;
     const isTargetMainOwner = target.username === MAIN_OWNER;
@@ -312,6 +323,7 @@ export default function UserManagement() {
         return { 
           canReset: true, 
           canDelete: true, 
+          canForceLogout: false,
           disabled: true, 
           disabledReason: 'El superusuario principal no puede ser modificado ni eliminado' 
         };
@@ -319,6 +331,7 @@ export default function UserManagement() {
         return { 
           canReset: false, // Usa la función Cambiar Contraseña
           canDelete: false, // No puede eliminarse a sí mismo
+          canForceLogout: false,
           disabled: false, 
           disabledReason: '' 
         };
@@ -327,18 +340,19 @@ export default function UserManagement() {
     
     // Si el objetivo es el usuario actual
     if (target.username === currentUser.username) {
-      return { canReset: false, canDelete: false, disabledReason: '' };
+      return { canReset: false, canDelete: false, canForceLogout: false, disabledReason: '' };
     }
     
     // El Owner principal puede eliminar a todos los demás
     if (isMainOwner) {
-      return { canReset: true, canDelete: true, disabled: false, disabledReason: '' };
+      return { canReset: true, canDelete: true, canForceLogout: true, disabled: false, disabledReason: '' };
     }
     
     const hasPermission = canManage(currentUser.role, target.role);
     return { 
       canReset: hasPermission, 
       canDelete: hasPermission, 
+      canForceLogout: false,
       disabled: false, 
       disabledReason: '' 
     };
@@ -401,7 +415,7 @@ export default function UserManagement() {
             </CardContent>
             {(() => {
               const actionStatus = canActOn(u);
-              if (!actionStatus.canReset && !actionStatus.canDelete) return null;
+              if (!actionStatus.canReset && !actionStatus.canDelete && !actionStatus.canForceLogout) return null;
               return (
                 <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
                   <Stack direction="row" spacing={1} width="100%">
@@ -416,8 +430,28 @@ export default function UserManagement() {
                             disabled={actionStatus.disabled}
                             onClick={() => setResetTarget(u)}
                             startIcon={<LockResetIcon />}
+                            aria-label="Restablecer"
+                            data-testid={`reset-${u.username}`}
                           >
                             Resetear
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    )}
+                    {actionStatus.canForceLogout && (
+                      <Tooltip title="Forzar cierre de todas las sesiones de este usuario">
+                        <span style={{ display: 'inline-flex' }}>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            color="info"
+                            disabled={actionStatus.disabled}
+                            onClick={() => { setForceLogoutError(''); setForceLogoutTarget(u); }}
+                            sx={{ minWidth: 40, px: 0 }}
+                            aria-label="Forzar cierre de sesiones"
+                            data-testid={`force-logout-${u.username}`}
+                          >
+                            <LogoutIcon />
                           </Button>
                         </span>
                       </Tooltip>
@@ -505,8 +539,17 @@ export default function UserManagement() {
                             {actionStatus.canReset && (
                               <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Resetear contraseña"}>
                                 <span>
-                                  <IconButton size="small" color="warning" disabled={actionStatus.disabled} onClick={() => setResetTarget(u)}>
+                                  <IconButton size="small" color="warning" disabled={actionStatus.disabled} onClick={() => setResetTarget(u)} aria-label="Restablecer" data-testid={`reset-${u.username}`}>
                                     <LockResetIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                            {actionStatus.canForceLogout && (
+                              <Tooltip title="Forzar cierre de sesiones">
+                                <span>
+                                  <IconButton size="small" color="info" disabled={actionStatus.disabled} onClick={() => { setForceLogoutError(''); setForceLogoutTarget(u); }} aria-label="Forzar cierre de sesiones" data-testid={`force-logout-${u.username}`}>
+                                    <LogoutIcon fontSize="small" />
                                   </IconButton>
                                 </span>
                               </Tooltip>
@@ -564,6 +607,37 @@ export default function UserManagement() {
           >
             Eliminar
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Confirmación de Forzar Cierre de Sesión */}
+      <Dialog open={Boolean(forceLogoutTarget)} onClose={() => setForceLogoutTarget(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 0 } }}>
+        <DialogTitle fontWeight={700}>Forzar cierre de sesión</DialogTitle>
+        <DialogContent>
+          {forceLogoutError && <Alert severity="error" sx={{ mb: 2 }}>{forceLogoutError}</Alert>}
+          {forceLogoutMutation.isSuccess && !forceLogoutError ? (
+            <Alert severity="success" sx={{ mb: 2 }}>Sesiones invalidadas con éxito.</Alert>
+          ) : (
+            <Typography>
+              ¿Estás seguro de que deseas forzar el cierre de todas las sesiones activas de <strong>{forceLogoutTarget?.username}</strong>?
+              Deberá iniciar sesión nuevamente.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => { setForceLogoutTarget(null); forceLogoutMutation.reset(); }} color="inherit">
+            {forceLogoutMutation.isSuccess && !forceLogoutError ? 'Cerrar' : 'Cancelar'}
+          </Button>
+          {!forceLogoutMutation.isSuccess && (
+            <Button
+              variant="contained"
+              color="info"
+              disabled={forceLogoutMutation.isPending}
+              onClick={() => { if (forceLogoutTarget) forceLogoutMutation.mutate(forceLogoutTarget.username); }}
+              startIcon={forceLogoutMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+            >
+              Forzar Cierre
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

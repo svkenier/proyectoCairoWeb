@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   // Autenticación
-  const payload = getAuthPayload(req);
+  const payload = await getAuthPayload(req);
   if (!payload) return res.status(401).json({ error: 'No autenticado' });
 
   // Solo encargado+ puede crear usuarios

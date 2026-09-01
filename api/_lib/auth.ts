@@ -6,13 +6,14 @@
 import jwt from 'jsonwebtoken';
 import type { VercelRequest } from '@vercel/node';
 import type { JWTPayload, UserRole } from '../../src/types/user.js';
+import { getUser } from './kv.js';
 
 const JWT_SECRET  = process.env['JWT_SECRET']  ?? 'dev-secret-change-me';
 const JWT_EXPIRES = '7d'; // 7 días de validez
 
 /** Firma un token JWT con username y role. */
-export function signToken(username: string, role: UserRole): string {
-  return jwt.sign({ sub: username, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+export function signToken(username: string, role: UserRole, tokenVersion: number = 1): string {
+  return jwt.sign({ sub: username, role, tokenVersion }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 }
 
 /**
@@ -37,11 +38,19 @@ export function extractToken(req: VercelRequest): string | null {
  * Extrae y verifica el token de la petición.
  * Retorna el payload o null si no hay token / es inválido.
  */
-export function getAuthPayload(req: VercelRequest): JWTPayload | null {
+export async function getAuthPayload(req: VercelRequest): Promise<JWTPayload | null> {
   const token = extractToken(req);
   if (!token) return null;
   try {
-    return verifyToken(token);
+    const payload = verifyToken(token);
+    // Verificar si el tokenVersion coincide con el de la base de datos
+    const user = await getUser(payload.sub);
+    const dbVersion = user?.tokenVersion || 1;
+    const payloadVersion = payload.tokenVersion || 1;
+    if (payloadVersion !== dbVersion) {
+      return null;
+    }
+    return payload;
   } catch {
     return null;
   }

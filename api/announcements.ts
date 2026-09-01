@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Las siguientes rutas requieren auth de admin o superadmin
-  const payload = getAuthPayload(req);
+  const payload = await getAuthPayload(req);
   if (!payload) return res.status(401).json({ error: 'No autenticado' });
 
   if (ROLE_LEVEL[payload.role] < ROLE_LEVEL['encargado']) {

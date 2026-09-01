@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // PUT: Protegido (solo superadmin)
   if (req.method === 'PUT') {
-    const auth = getAuthPayload(req);
+    const auth = await getAuthPayload(req);
     if (!auth) {
       return res.status(401).json({ error: 'No autorizado. Token inválido o ausente.' });
     }

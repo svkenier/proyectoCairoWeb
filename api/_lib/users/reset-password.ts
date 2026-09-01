@@ -14,7 +14,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import { getAuthPayload } from '../auth.js';
-import { getUser, setUser } from '../kv.js';
+import { getUser, updateUserPreservingTTL } from '../kv.js';
 import { ROLE_LEVEL, canManage } from '../../../src/types/user.js';
 
 const BCRYPT_ROUNDS        = 12;
@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const payload = getAuthPayload(req);
+  const payload = await getAuthPayload(req);
   if (!payload) return res.status(401).json({ error: 'No autenticado' });
 
   // Solo encargado+ puede resetear contraseñas
@@ -57,8 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const newHash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
-
-  await setUser({ ...targetUser, password_hash: newHash });
+  
+  const newTokenVersion = (targetUser.tokenVersion || 1) + 1;
+  await updateUserPreservingTTL(target_username, { password_hash: newHash, tokenVersion: newTokenVersion });
 
   return res.status(200).json({ ok: true });
 }

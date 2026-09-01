@@ -50,6 +50,22 @@ export async function deleteUser(username: string): Promise<void> {
   await redis.del(userKey(username));
 }
 
+/** 
+ * Actualiza parcialmente un usuario conservando su tiempo de expiración (TTL) actual.
+ */
+export async function updateUserPreservingTTL(username: string, updates: Partial<KVUser>): Promise<void> {
+  const user = await getUser(username);
+  if (!user) return;
+  const currentTtl = await redis.ttl(userKey(username));
+  const updatedUser = { ...user, ...updates };
+  if (currentTtl > 0) {
+    await redis.set(userKey(username), updatedUser, { ex: currentTtl });
+  } else {
+    // Si no tiene TTL (-1), se guarda sin expiración.
+    await redis.set(userKey(username), updatedUser);
+  }
+}
+
 /** Activa el TTL de 30 días en la cuenta de un usuario (logout). */
 export async function activateTTL(username: string, durationSeconds: number = TTL_30_DAYS): Promise<void> {
   await redis.expire(userKey(username), durationSeconds);

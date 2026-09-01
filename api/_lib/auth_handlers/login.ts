@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   await updateLastLogin(normalizedUsername);
 
   // 5. Firmar JWT
-  const token = signToken(user.username, user.role);
+  const token = signToken(user.username, user.role, user.tokenVersion || 1);
 
   // 6. Responder con token y datos públicos del usuario
   const { password_hash: _ph, ...publicUser } = user;

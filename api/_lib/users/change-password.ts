@@ -12,7 +12,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import bcrypt from 'bcryptjs';
 import { getAuthPayload } from '../auth.js';
-import { getUser, setUser } from '../kv.js';
+import { getUser, updateUserPreservingTTL } from '../kv.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const payload = getAuthPayload(req);
+  const payload = await getAuthPayload(req);
   if (!payload) return res.status(401).json({ error: 'No autenticado' });
 
   const { current_password, new_password } = req.body as {
@@ -48,9 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'La contraseña actual es incorrecta' });
   }
 
-  // Hashear y guardar nueva contraseña
+  // Hashear y guardar nueva contraseña incrementando tokenVersion
   const newHash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
-  await setUser({ ...user, password_hash: newHash });
+  const newTokenVersion = (user.tokenVersion || 1) + 1;
+  await updateUserPreservingTTL(payload.sub, { password_hash: newHash, tokenVersion: newTokenVersion });
 
   return res.status(200).json({ ok: true });
 }
