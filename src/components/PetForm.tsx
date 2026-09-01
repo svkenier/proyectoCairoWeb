@@ -50,21 +50,7 @@ interface PetFormProps {
   initial?: Pet | null; // null = crear nuevo
 }
 
-interface FormState {
-  nombre:          string;
-  especie:         string;
-  raza:            string;
-  sexo:            string;
-  tamano:          string;
-  edad_aproximada: string;
-  peso_kg:         string;
-  descripcion:     string;
-  estado:          string;
-  destacado:       boolean;
-  vacunado:        boolean;
-  esterilizado:    boolean;
-  desparasitado:   boolean;
-}
+
 
 const EMPTY = {
   nombre: '', especie: '', raza: '', sexo: '',

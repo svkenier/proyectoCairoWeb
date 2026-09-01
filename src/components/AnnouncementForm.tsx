@@ -45,15 +45,7 @@ interface AnnouncementFormProps {
   initial?: Announcement | null;
 }
 
-interface FormState {
-  title:       string;
-  type:        AnnouncementType;
-  description: string;
-  date:        string;
-  time:        string;
-  location:    string;
-  is_active:   boolean;
-}
+
 
 const EMPTY = {
   title: '',
