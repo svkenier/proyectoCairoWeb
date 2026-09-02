@@ -174,10 +174,6 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
     petsFile?.sha,
   );
 
-  // Invalida caché de Redis
-  const { invalidatePetsCache } = await import('./_lib/kv.js');
-  await invalidatePetsCache();
-
     return res.status(isUpdate ? 200 : 201).json({ ok: true, pet });
   } catch (err) {
     console.error('❌ [handleUpsert] Error inesperado:', err);

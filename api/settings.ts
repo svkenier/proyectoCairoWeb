@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getGlobalSettings, deleteGlobalSettings } from './_lib/kv.js';
 import { getAuthPayload } from './_lib/auth.js';
 import { getFile, getFileWithETag, putFile, SHELTER_INFO_PATH } from './_lib/github.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
@@ -27,15 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (ghRes.data) {
         settings = JSON.parse(Buffer.from(ghRes.data.content, 'base64').toString('utf-8'));
-      } else {
-        // Migration logic: if GitHub file doesn't exist, try Redis
-        const redisSettings = await getGlobalSettings();
-        if (redisSettings) {
-          settings = redisSettings;
-          // Optionally, we could save it to GitHub right now, but since GET is public, 
-          // we might just return it and let the admin save it later to avoid public users
-          // triggering GitHub commits.
-        }
       }
 
       return res.status(200).json(settings || {});
@@ -72,13 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `Update shelter settings`,
         currentFile?.sha
       );
-
-      // Clean up Redis if it still exists
-      try {
-        await deleteGlobalSettings();
-      } catch (e) {
-        console.warn('Could not delete Redis settings', e);
-      }
 
       return res.status(200).json({ message: 'Configuración actualizada con éxito.', settings: newSettings });
     } catch (err) {

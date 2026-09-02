@@ -109,43 +109,7 @@ export async function updateLastLogin(username: string): Promise<void> {
   await updateUserPreservingTTL(username, { last_login: new Date().toISOString() });
 }
 
-// ─── Caché Pública ────────────────────────────────────────────────────────────
-
-const CACHE_KEY_PETS = 'cache:pets_json';
-
-/** Guarda el catálogo de mascotas en Redis con TTL de 10 minutos. */
-export async function setPetsCache(petsArray: unknown[]): Promise<void> {
-  await redis.set(CACHE_KEY_PETS, petsArray, { ex: 600 }); // 10 min
-}
-
-/** Obtiene el catálogo de mascotas desde Redis. */
-export async function getPetsCache(): Promise<unknown[] | null> {
-  return redis.get<unknown[]>(CACHE_KEY_PETS);
-}
-
-/** Invalida la caché del catálogo (usado tras un commit a Github). */
-export async function invalidatePetsCache(): Promise<void> {
-  await redis.del(CACHE_KEY_PETS);
-}
-
-// ─── Configuración Global (Settings) ──────────────────────────────────────────
-
-const SETTINGS_KEY = 'config:general';
-
-/** Obtiene la configuración global del refugio. Retorna null si no existe. */
-export async function getGlobalSettings(): Promise<unknown | null> {
-  return redis.get(SETTINGS_KEY);
-}
-
-/** Guarda la configuración global del refugio. */
-export async function setGlobalSettings(settings: unknown): Promise<void> {
-  await redis.set(SETTINGS_KEY, settings);
-}
-
-/** Elimina la configuración global de Redis. */
-export async function deleteGlobalSettings(): Promise<void> {
-  await redis.del(SETTINGS_KEY);
-}
+// ─── Caché y Configuración (Eliminados de KV, ahora en GitHub) ──────────────────────────────────────────────
 
 // ─── Anuncios (Eliminados de KV, ahora en GitHub) ──────────────────────────────────────────────
 

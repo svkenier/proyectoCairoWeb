@@ -8,8 +8,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFile, PETS_JSON_PATH } from '../_lib/github.js';
-import { getPetsCache, setPetsCache } from '../_lib/kv.js';
+import { getFileWithETag, PETS_JSON_PATH } from '../_lib/github.js';
 import { publicRateLimit, checkRateLimit } from '../_lib/rate-limit.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -28,24 +27,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 1. Intentar desde Redis
-    const cached = await getPetsCache();
-    if (cached) {
-      res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json({ mascotas: cached });
+    const ifNoneMatch = req.headers['if-none-match'];
+    const ghRes = await getFileWithETag(PETS_JSON_PATH, ifNoneMatch);
+
+    if (ghRes.notModified) {
+      return res.status(304).end();
     }
 
-    // 2. Fallback a GitHub
-    res.setHeader('X-Cache', 'MISS');
-    const file = await getFile(PETS_JSON_PATH);
-    
+    if (ghRes.etag) {
+      res.setHeader('ETag', ghRes.etag);
+    }
+
     let pets = [];
-    if (file) {
-      pets = JSON.parse(Buffer.from(file.content, 'base64').toString('utf-8'));
+    if (ghRes.data) {
+      try {
+        pets = JSON.parse(Buffer.from(ghRes.data.content, 'base64').toString('utf-8'));
+      } catch {
+        pets = [];
+      }
     }
-
-    // 3. Guardar en Caché
-    await setPetsCache(pets);
 
     return res.status(200).json({ mascotas: pets });
   } catch (err) {
