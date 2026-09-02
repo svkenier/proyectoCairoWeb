@@ -197,9 +197,11 @@ export default function AnnouncementsSection() {
   });
 
   const activeAnnouncements = announcements?.filter(a => 
-    a.is_active === true || 
-    String(a.is_active) === 'true' || 
-    (a.is_active as unknown) === 1
+    a && (
+      a.is_active === true || 
+      String(a.is_active) === 'true' || 
+      (a.is_active as unknown) === 1
+    )
   ) || [];
 
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
@@ -312,8 +314,8 @@ export default function AnnouncementsSection() {
                         </Box>
                       </Box>
                     ))
-                  : activeAnnouncements.map((announcement, i) => (
-                      <Box key={announcement.id} sx={{ 
+                  : activeAnnouncements?.map((announcement, i) => (
+                      <Box key={announcement?.id || i} sx={{ 
                         flex: '0 0 auto', 
                         minWidth: 0, 
                         pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
@@ -321,7 +323,7 @@ export default function AnnouncementsSection() {
                       }}>
                         <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
                           <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
-                            <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                            {announcement ? <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} /> : null}
                           </Box>
                         </AnimatedSection>
                       </Box>

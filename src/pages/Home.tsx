@@ -301,8 +301,8 @@ export default function Home() {
                         </Box>
                       </Box>
                     ))
-                  : displayPets.map((pet, i) => (
-                      <Box key={pet.id} sx={{ 
+                  : displayPets?.map((pet, i) => (
+                      <Box key={pet?.id || i} sx={{ 
                         flex: '0 0 auto', 
                         minWidth: 0, 
                         pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
@@ -310,7 +310,7 @@ export default function Home() {
                       }}>
                         <AnimatedSection delay={i * 60} sx={{ height: '100%' }}>
                           <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
-                            <PetCard pet={pet} />
+                            {pet ? <PetCard pet={pet} /> : null}
                           </Box>
                         </AnimatedSection>
                       </Box>

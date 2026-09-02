@@ -268,10 +268,10 @@ export default function Catalog() {
                     <PetCardSkeleton />
                   </Grid>
                 ))
-              : filtered.map((pet, i) => (
-                  <Grid key={pet.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              : filtered?.map((pet, i) => (
+                  <Grid key={pet?.id || i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <AnimatedSection delay={Math.min(i * 40, 320)}>
-                      <PetCard pet={pet} />
+                      {pet ? <PetCard pet={pet} /> : null}
                     </AnimatedSection>
                   </Grid>
                 ))}

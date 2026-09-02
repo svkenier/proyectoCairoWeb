@@ -11,7 +11,7 @@ interface SEOProps {
 export default function SEO({ 
   title, 
   description, 
-  image = '/hero-bg.webp', 
+  image = '/hero-desktop.webp', 
   url, 
   type = 'website' 
 }: SEOProps) {
@@ -26,7 +26,7 @@ export default function SEO({
     "name": "Proyecto Cairo",
     "url": baseUrl,
     "logo": `${baseUrl}/favicon.webp`,
-    "image": `${baseUrl}/hero-bg.webp`,
+    "image": `${baseUrl}/hero-desktop.webp`,
     "description": description,
     "contactPoint": {
       "@type": "ContactPoint",
