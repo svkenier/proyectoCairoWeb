@@ -8,7 +8,7 @@
  * 4. Contacto — ContactSection (3 canales WhatsApp).
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
@@ -19,6 +19,8 @@ import Grid from '@mui/material/Grid2';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import SearchOutlinedIcon      from '@mui/icons-material/SearchOutlined';
 import ChatOutlinedIcon        from '@mui/icons-material/ChatOutlined';
 import HomeOutlinedIcon        from '@mui/icons-material/HomeOutlined';
@@ -72,23 +74,36 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Solo mostrar mascotas destacadas (máx 4) disponibles
-  const featured = useMemo(() => {
-    if (!data?.mascotas) return [];
-    return data.mascotas
-      .filter((p) => p.destacado === true && p.estado !== 'adoptado')
-      .slice(0, 4);
-  }, [data]);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Mobile Pagination State for Pets Carousel
+  const [currentPetPage, setCurrentPetPage] = useState(0);
+  const petScrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Si no hay destacados, mostrar los 4 más recientes disponibles
+  const handlePetScroll = () => {
+    if (!petScrollContainerRef.current) return;
+    const { scrollLeft, clientWidth } = petScrollContainerRef.current;
+    const page = Math.round(scrollLeft / clientWidth);
+    if (page !== currentPetPage && page >= 0) {
+      setCurrentPetPage(page);
+    }
+  };
+
+  const handlePetDotClick = (index: number) => {
+    if (!petScrollContainerRef.current) return;
+    const { clientWidth } = petScrollContainerRef.current;
+    petScrollContainerRef.current.scrollTo({ left: clientWidth * index, behavior: 'smooth' });
+  };
+
+  // Mostrar hasta 8 mascotas: priorizar destacadas, rellenar con recientes
   const displayPets = useMemo(() => {
-    if (featured.length > 0) return featured;
     if (!data?.mascotas) return [];
-    return [...data.mascotas]
-      .filter((p) => p.estado !== 'adoptado')
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 4);
-  }, [featured, data]);
+    const available = data.mascotas.filter((p) => p.estado !== 'adoptado');
+    const featured = available.filter(p => p.destacado === true);
+    const regular = available.filter(p => p.destacado !== true).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return [...featured, ...regular].slice(0, 8);
+  }, [data]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -232,21 +247,75 @@ export default function Home() {
             </Alert>
           )}
 
-          <Grid container spacing={3}>
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-                    <PetCardSkeleton />
-                  </Grid>
-                ))
-              : displayPets.map((pet, i) => (
-                  <Grid key={pet.id} size={{ xs: 12, sm: 6, md: 3 }}>
-                    <AnimatedSection delay={i * 60}>
-                      <PetCard pet={pet} />
-                    </AnimatedSection>
-                  </Grid>
-                ))}
-          </Grid>
+          {isMobile ? (
+            <Box sx={{ position: 'relative' }}>
+              <Box 
+                ref={petScrollContainerRef}
+                onScroll={handlePetScroll}
+                sx={{ 
+                  display: 'flex', 
+                  gap: 2, 
+                  overflowX: 'auto', 
+                  scrollSnapType: 'x mandatory',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  scrollBehavior: 'smooth',
+                  px: 2,
+                  pb: 2
+                }}
+              >
+                {isLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: 'calc(100% - 32px)' }}>
+                        <PetCardSkeleton />
+                      </Box>
+                    ))
+                  : displayPets.map((pet, i) => (
+                      <Box key={pet.id} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: 'calc(100% - 32px)' }}>
+                        <AnimatedSection delay={i * 60} sx={{ height: '100%' }}>
+                          <PetCard pet={pet} />
+                        </AnimatedSection>
+                      </Box>
+                    ))}
+              </Box>
+              
+              {displayPets.length > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
+                  {displayPets.map((_, i) => (
+                    <Box
+                      key={i}
+                      onClick={() => handlePetDotClick(i)}
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        bgcolor: i === currentPetPage ? 'primary.main' : 'grey.300',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s',
+                        '&:hover': { bgcolor: 'primary.light' }
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {isLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                      <PetCardSkeleton />
+                    </Grid>
+                  ))
+                : displayPets.map((pet, i) => (
+                    <Grid key={pet.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                      <AnimatedSection delay={i * 60}>
+                        <PetCard pet={pet} />
+                      </AnimatedSection>
+                    </Grid>
+                  ))}
+            </Grid>
+          )}
 
           {!isLoading && displayPets.length > 0 && (
             <AnimatedSection sx={{ textAlign: 'center', mt: 5 }}>
