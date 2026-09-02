@@ -141,7 +141,7 @@ export default function Home() {
             md: "url('/hero-desktop.webp')"
           },
           backgroundSize: 'cover',
-          backgroundPosition: { xs: 'center center', md: 'center right' },
+          backgroundPosition: { xs: 'right bottom', md: 'center right' },
           '&::before': {
             content: '""',
             position: 'absolute',
