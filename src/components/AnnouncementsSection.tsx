@@ -37,7 +37,7 @@ const TYPE_COLORS: Record<AnnouncementType, 'primary' | 'secondary' | 'success' 
   esterilizacion: 'info',
   adopcion: 'secondary',
   evento: 'warning',
-  general: 'default',
+  general: 'success',
 };
 
 const TYPE_LABELS: Record<AnnouncementType, string> = {
@@ -45,7 +45,7 @@ const TYPE_LABELS: Record<AnnouncementType, string> = {
   esterilizacion: 'Jornada de Esterilización',
   adopcion: 'Jornada de Adopción',
   evento: 'Evento Especial',
-  general: 'Anuncio',
+  general: 'General',
 };
 
 function formatDateNatural(dateString: string): string {

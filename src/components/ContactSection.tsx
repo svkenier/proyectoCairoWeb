@@ -21,7 +21,7 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import HandshakeOutlinedIcon from '@mui/icons-material/HandshakeOutlined';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { getRescueUrl, getDonationUrl, openWhatsApp, getAdoptionUrl, getVolunteerUrl } from '@/utils/whatsapp';
+import { getRescueUrl, getDonationUrl, openWhatsApp, getGenericAdoptionUrl, getVolunteerUrl } from '@/utils/whatsapp';
 import { get } from '@/api/client';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import type { Settings } from '@/types/settings';
@@ -52,7 +52,7 @@ export default function ContactSection({ sx }: ContactSectionProps) {
       action:   'Escribir al refugio',
       iconBg:   '#E0E7FF',
       iconColor: '#102A43',
-      getUrl:   () => getAdoptionUrl(phone, { nombre: 'una mascota', id: 'general' }),
+      getUrl:   () => getGenericAdoptionUrl(phone),
     },
     {
       icon:     <CampaignOutlinedIcon sx={{ fontSize: 28 }} />,

@@ -51,6 +51,14 @@ export function getAdoptionUrl(phone: string, params: WhatsAppAdoptionParams): s
 }
 
 /**
+ * Genera el enlace de WhatsApp para información general sobre el proceso de adopción.
+ */
+export function getGenericAdoptionUrl(phone: string): string {
+  const message = `¡Hola! Me gustaría recibir información sobre el proceso de adopción y conocer a las mascotas disponibles para darles un hogar.`;
+  return buildWaUrl(phone, message);
+}
+
+/**
  * Genera el enlace de WhatsApp para reportar un animal en situación de calle o emergencia.
  */
 export function getRescueUrl(phone: string, params: WhatsAppRescueParams = {}): string {

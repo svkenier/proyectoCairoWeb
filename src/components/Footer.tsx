@@ -20,7 +20,7 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import TwitterIcon  from '@mui/icons-material/Twitter';
 import Skeleton     from '@mui/material/Skeleton';
 import logo         from '@/assets/logo.webp';
-import { getAdoptionUrl, getRescueUrl, getDonationUrl, openWhatsApp } from '@/utils/whatsapp';
+import { getGenericAdoptionUrl, getRescueUrl, getDonationUrl, getVolunteerUrl, openWhatsApp } from '@/utils/whatsapp';
 import { get } from '@/api/client';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import type { Settings } from '@/types/settings';
@@ -54,9 +54,10 @@ export default function Footer() {
   const phone = config.whatsapp;
 
   const WA_CHANNELS = [
-    { label: 'Adoptar una mascota', getUrl: () => getAdoptionUrl(phone, { nombre: 'una mascota', id: 'general' }) },
+    { label: 'Adoptar una mascota', getUrl: () => getGenericAdoptionUrl(phone) },
     { label: 'Reportar un rescate', getUrl: () => getRescueUrl(phone) },
     { label: 'Donar / Apadrinar',   getUrl: () => getDonationUrl(phone) },
+    { label: 'Voluntariado',        getUrl: () => getVolunteerUrl(phone) },
   ];
 
   // Map logic
