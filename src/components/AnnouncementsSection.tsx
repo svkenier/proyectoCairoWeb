@@ -28,25 +28,11 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { get } from '@/api/client';
 import AnimatedSection from '@/components/AnimatedSection';
-import type { Announcement, AnnouncementType } from '@/types/announcement';
+import type { Announcement } from '@/types/announcement';
 import { PET_IMAGE_FALLBACK } from '@/config';
 import type { Settings } from '@/types/settings';
 
-const TYPE_COLORS: Record<AnnouncementType, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'default'> = {
-  vacunacion: 'success',
-  esterilizacion: 'info',
-  adopcion: 'secondary',
-  evento: 'warning',
-  general: 'success',
-};
-
-const TYPE_LABELS: Record<AnnouncementType, string> = {
-  vacunacion: 'Jornada de Vacunación',
-  esterilizacion: 'Jornada de Esterilización',
-  adopcion: 'Jornada de Adopción',
-  evento: 'Evento Especial',
-  general: 'General',
-};
+import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS } from '@/utils/announcementHelpers';
 
 function formatDateNatural(dateString: string): string {
   if (!dateString) return '';
@@ -65,6 +51,42 @@ function formatDateNatural(dateString: string): string {
     }
   }
   return dateString;
+}
+
+function reorderAnnouncements(items: Announcement[]): Announcement[] {
+  if (!items || items.length <= 2) return items;
+  
+  const result: Announcement[] = [];
+  const remaining = [...items];
+
+  result.push(remaining.shift()!);
+
+  while (remaining.length > 0) {
+    const lastType = result[result.length - 1].type;
+    const nextIndex = remaining.findIndex(item => item.type !== lastType);
+    
+    if (nextIndex !== -1) {
+      result.push(remaining.splice(nextIndex, 1)[0]);
+    } else {
+      result.push(remaining.shift()!);
+    }
+  }
+  
+  if (result.length > 2 && result[0].type === result[result.length - 1].type) {
+     const swapIndex = result.findIndex((item, i) => 
+        i !== 0 && i !== result.length - 1 &&
+        item.type !== result[result.length - 1].type &&
+        item.type !== result[result.length - 2].type &&
+        result[0].type !== item.type
+     );
+     if (swapIndex !== -1) {
+       const temp = result[swapIndex];
+       result[swapIndex] = result[result.length - 1];
+       result[result.length - 1] = temp;
+     }
+  }
+
+  return result;
 }
 
 
@@ -98,7 +120,6 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         />
         <Chip
           label={TYPE_LABELS[announcement.type] || 'Evento'}
-          color={TYPE_COLORS[announcement.type]}
           size="small"
           sx={{
             position: 'absolute',
@@ -106,6 +127,8 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
             left: 12,
             fontWeight: 700,
             backdropFilter: 'blur(4px)',
+            bgcolor: TYPE_COLORS[announcement.type] || '#71717A',
+            color: TYPE_TEXT_COLORS[announcement.type] || '#FFFFFF'
           }}
         />
       </Box>
@@ -208,13 +231,15 @@ export default function AnnouncementsSection() {
     )
   ) || [];
 
+  const orderedAnnouncements = reorderAnnouncements(activeAnnouncements);
+
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const itemsVisible = isDesktop ? 3 : isTablet ? 2 : 1;
-  const loopActive = activeAnnouncements.length > itemsVisible;
+  const loopActive = orderedAnnouncements.length > itemsVisible;
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: loopActive,
@@ -318,7 +343,7 @@ export default function AnnouncementsSection() {
                         </Box>
                       </Box>
                     ))
-                  : activeAnnouncements?.map((announcement, i) => (
+                  : orderedAnnouncements?.map((announcement, i) => (
                       <Box key={announcement?.id || i} sx={{ 
                         flex: '0 0 auto', 
                         minWidth: 0, 

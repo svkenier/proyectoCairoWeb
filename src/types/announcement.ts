@@ -2,7 +2,7 @@
  * Tipos de datos para el módulo de Eventos y Anuncios
  */
 
-export type AnnouncementType = 'vacunacion' | 'esterilizacion' | 'adopcion' | 'evento' | 'general';
+export type AnnouncementType = 'vacunacion' | 'esterilizacion' | 'adopcion' | 'evento' | 'general' | 'perdida';
 
 export interface Announcement {
   /** Identificador único (UUID o timestamp) */

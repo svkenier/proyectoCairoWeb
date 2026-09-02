@@ -280,6 +280,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
                 <MenuItem value="adopcion">Jornada Adopción</MenuItem>
                 <MenuItem value="evento">Evento</MenuItem>
                 <MenuItem value="general">General</MenuItem>
+                <MenuItem value="perdida">Mascota Perdida</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -318,7 +319,8 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
 
           <Grid size={{ xs: 12 }}>
             <TextField
-              label="Ubicación (Opcional)"
+              label={formik.values.type === 'perdida' ? "Último lugar donde se vio (opcional)" : "Ubicación (Opcional)"}
+              placeholder={formik.values.type === 'perdida' ? "Ej: Sector La Paragua, visto por última vez cerca del parque..." : ""}
               name="location"
               value={formik.values.location}
               onChange={formik.handleChange}

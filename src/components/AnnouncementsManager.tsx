@@ -35,24 +35,10 @@ import Stack from '@mui/material/Stack';
 
 import { get, del, formatApiError } from '@/api/client';
 import AnnouncementForm from './AnnouncementForm';
-import type { Announcement, AnnouncementType } from '@/types/announcement';
+import type { Announcement } from '@/types/announcement';
 import { PET_IMAGE_FALLBACK } from '@/config';
 
-const TYPE_COLORS: Record<AnnouncementType, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'default'> = {
-  vacunacion: 'success',
-  esterilizacion: 'info',
-  adopcion: 'secondary',
-  evento: 'warning',
-  general: 'default',
-};
-
-const TYPE_LABELS: Record<AnnouncementType, string> = {
-  vacunacion: 'Vacunación',
-  esterilizacion: 'Esterilización',
-  adopcion: 'Adopción',
-  evento: 'Evento',
-  general: 'General',
-};
+import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS } from '@/utils/announcementHelpers';
 
 export default function AnnouncementsManager() {
   const qc = useQueryClient();
@@ -137,7 +123,7 @@ export default function AnnouncementsManager() {
                 <Typography variant="h6" fontWeight={700} lineHeight={1.2} mb={0.5}>
                   {a.title}
                 </Typography>
-                <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" color={TYPE_COLORS[a.type]} variant="outlined" sx={{ mb: 1 }} />
+                <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" sx={{ mb: 1, bgcolor: TYPE_COLORS[a.type] || '#71717A', color: TYPE_TEXT_COLORS[a.type] || '#FFFFFF', fontWeight: 600 }} />
                 <Typography variant="body2" color="text.secondary" display="block">
                   {a.date} {a.time && `• ${a.time}`}
                 </Typography>
@@ -216,7 +202,7 @@ export default function AnnouncementsManager() {
                       <Typography variant="body2" fontWeight={600}>{a.title}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" color={TYPE_COLORS[a.type]} variant="outlined" />
+                      <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" sx={{ bgcolor: TYPE_COLORS[a.type] || '#71717A', color: TYPE_TEXT_COLORS[a.type] || '#FFFFFF', fontWeight: 600 }} />
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{a.date}</Typography>
