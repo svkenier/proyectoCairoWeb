@@ -53,41 +53,6 @@ function formatDateNatural(dateString: string): string {
   return dateString;
 }
 
-function reorderAnnouncements(items: Announcement[]): Announcement[] {
-  if (!items || items.length <= 2) return items;
-  
-  const result: Announcement[] = [];
-  const remaining = [...items];
-
-  result.push(remaining.shift()!);
-
-  while (remaining.length > 0) {
-    const lastType = result[result.length - 1].type;
-    const nextIndex = remaining.findIndex(item => item.type !== lastType);
-    
-    if (nextIndex !== -1) {
-      result.push(remaining.splice(nextIndex, 1)[0]);
-    } else {
-      result.push(remaining.shift()!);
-    }
-  }
-  
-  if (result.length > 2 && result[0].type === result[result.length - 1].type) {
-     const swapIndex = result.findIndex((item, i) => 
-        i !== 0 && i !== result.length - 1 &&
-        item.type !== result[result.length - 1].type &&
-        item.type !== result[result.length - 2].type &&
-        result[0].type !== item.type
-     );
-     if (swapIndex !== -1) {
-       const temp = result[swapIndex];
-       result[swapIndex] = result[result.length - 1];
-       result[result.length - 1] = temp;
-     }
-  }
-
-  return result;
-}
 
 
 function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Announcement; whatsappNumber: string }) {
@@ -236,7 +201,7 @@ export default function AnnouncementsSection() {
     )
   ) || [];
 
-  const orderedAnnouncements = reorderAnnouncements(activeAnnouncements);
+  const orderedAnnouncements = activeAnnouncements;
 
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
   const theme = useTheme();
