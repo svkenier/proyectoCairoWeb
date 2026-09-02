@@ -237,11 +237,11 @@ export default function AnnouncementsSection() {
         container.style.scrollBehavior = 'auto';
         container.scrollLeft = cardWidth * N;
         // Re-enable smooth scroll
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.style.scrollBehavior = 'smooth';
           }
-        }, 50);
+        });
       }
     }
   }, [N]);
@@ -267,11 +267,11 @@ export default function AnnouncementsSection() {
     if (scrollLeft <= cardWidth * (N - 0.5)) {
       container.style.scrollBehavior = 'auto';
       container.scrollLeft = scrollLeft + cardWidth * N;
-      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
     } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
       container.style.scrollBehavior = 'auto';
       container.scrollLeft = scrollLeft - cardWidth * N;
-      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
     }
   };
 
@@ -354,13 +354,14 @@ export default function AnnouncementsSection() {
                 scrollbarWidth: 'none',
                 '&::-webkit-scrollbar': { display: 'none' },
                 scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
                 px: 0,
                 pb: 2
               }}
             >
               {isLoading
                 ? Array.from({ length: itemsVisible }).map((_, i) => (
-                    <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
+                    <Box key={i} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
                       <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
                         <Card sx={{ height: '100%' }}>
                           <Skeleton variant="rectangular" height={220} />
@@ -374,7 +375,7 @@ export default function AnnouncementsSection() {
                     </Box>
                   ))
                 : infiniteAnnouncements.map((announcement, i) => (
-                    <Box key={`${announcement.id}-${i}`} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
+                    <Box key={`${announcement.id}-${i}`} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
                       <AnimatedSection delay={0} sx={{ height: '100%' }}>
                         <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
                           <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />

@@ -112,11 +112,11 @@ export default function Home() {
       if (cardWidth > 0) {
         container.style.scrollBehavior = 'auto';
         container.scrollLeft = cardWidth * N;
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           if (petScrollContainerRef.current) {
             petScrollContainerRef.current.style.scrollBehavior = 'smooth';
           }
-        }, 50);
+        });
       }
     }
   }, [isMobile, N]);
@@ -141,11 +141,11 @@ export default function Home() {
     if (scrollLeft <= cardWidth * (N - 0.5)) {
       container.style.scrollBehavior = 'auto';
       container.scrollLeft = scrollLeft + cardWidth * N;
-      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
     } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
       container.style.scrollBehavior = 'auto';
       container.scrollLeft = scrollLeft - cardWidth * N;
-      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
     }
   };
 
@@ -313,20 +313,21 @@ export default function Home() {
                   scrollbarWidth: 'none',
                   '&::-webkit-scrollbar': { display: 'none' },
                   scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch',
                   px: 0,
                   pb: 2
                 }}
               >
                 {isLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
-                      <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: '100%' }}>
+                      <Box key={i} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: '100%' }}>
                         <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
                           <PetCardSkeleton />
                         </Box>
                       </Box>
                     ))
                   : infinitePets.map((pet, i) => (
-                      <Box key={`${pet.id}-${i}`} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: '100%' }}>
+                      <Box key={`${pet.id}-${i}`} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: '100%' }}>
                         <AnimatedSection delay={0} sx={{ height: '100%' }}>
                           <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
                             <PetCard pet={pet} />
