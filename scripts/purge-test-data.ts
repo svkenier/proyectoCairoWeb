@@ -2,13 +2,21 @@ import { Redis } from '@upstash/redis';
 import dotenv from 'dotenv';
 
 
-dotenv.config();
+dotenv.config({ path: '.env.test' });
 dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL ?? '',
   token: process.env.UPSTASH_REDIS_REST_TOKEN ?? '',
 });
+
+// Candado de Seguridad (Production Guard)
+const TARGET_BRANCH = process.env.GITHUB_BRANCH || 'staging';
+if (TARGET_BRANCH === 'main' || TARGET_BRANCH === 'production') {
+  console.error('[SECURITY ERROR] Tests E2E cannot run against production (main branch). Switch to staging.');
+  process.exit(1);
+}
 
 const GITHUB_TOKEN = process.env['GITHUB_TOKEN'] ?? '';
 const GITHUB_OWNER = process.env['GITHUB_OWNER'] ?? '';
@@ -179,8 +187,7 @@ async function runCleanup() {
   }
 
   // Purge Branches
-  await purgeBranch('main');
-  await purgeBranch('staging');
+  await purgeBranch(TARGET_BRANCH);
 }
 
 runCleanup().catch(err => {

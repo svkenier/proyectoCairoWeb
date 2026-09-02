@@ -7,6 +7,12 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.test') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+// Candado de Seguridad (Production Guard)
+if (process.env.GITHUB_BRANCH === 'main' || process.env.GITHUB_BRANCH === 'production') {
+  console.error('[SECURITY ERROR] Tests E2E cannot run against production (main branch). Switch to staging.');
+  process.exit(1);
+}
+
 /**
  * Configuración global de Playwright
  * Ver https://playwright.dev/docs/test-configuration
