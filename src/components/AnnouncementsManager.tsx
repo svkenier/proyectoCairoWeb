@@ -60,6 +60,7 @@ export default function AnnouncementsManager() {
     mutationFn: (id: string) => del('/announcements', { data: { id } }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['announcements'] });
+      void qc.invalidateQueries({ queryKey: ['announcements-public'] });
       setDeleting(null);
     },
     onError: (err) => {

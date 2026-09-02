@@ -156,6 +156,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['announcements'] });
+      void qc.invalidateQueries({ queryKey: ['announcements-public'] });
       onClose();
     },
     onError: (err: unknown) => {
