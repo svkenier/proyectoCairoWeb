@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid2';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
@@ -25,6 +24,7 @@ import ChevronLeftIcon   from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useRef } from 'react';
 
 import { get } from '@/api/client';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -190,27 +190,45 @@ export default function AnnouncementsSection() {
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const itemsVisible = isMobile ? 1 : isTablet ? 2 : 3;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const numPages = Math.ceil(activeAnnouncements.length / itemsVisible);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollLeft, clientWidth } = scrollContainerRef.current;
+    const page = Math.round(scrollLeft / clientWidth);
+    if (page !== currentPage && page >= 0 && page < numPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const handleNext = () => {
-    if (currentIndex + itemsVisible < activeAnnouncements.length) {
-      setCurrentIndex(currentIndex + 1);
+    if (!scrollContainerRef.current) return;
+    const { scrollLeft, clientWidth, scrollWidth } = scrollContainerRef.current;
+    if (scrollLeft + clientWidth >= scrollWidth - 10) {
+      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
     } else {
-      setCurrentIndex(0);
+      scrollContainerRef.current.scrollBy({ left: clientWidth, behavior: 'smooth' });
     }
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+    if (!scrollContainerRef.current) return;
+    const { scrollLeft, clientWidth, scrollWidth } = scrollContainerRef.current;
+    if (scrollLeft <= 10) {
+      scrollContainerRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
     } else {
-      setCurrentIndex(Math.max(0, activeAnnouncements.length - itemsVisible));
+      scrollContainerRef.current.scrollBy({ left: -clientWidth, behavior: 'smooth' });
     }
   };
 
-  // Asegurarnos de que el índice es válido si cambia el tamaño de pantalla
-  const safeIndex = Math.min(currentIndex, Math.max(0, activeAnnouncements.length - itemsVisible));
-  const visibleAnnouncements = activeAnnouncements.slice(safeIndex, safeIndex + itemsVisible);
+  const handleDotClick = (index: number) => {
+    if (!scrollContainerRef.current) return;
+    const { clientWidth } = scrollContainerRef.current;
+    scrollContainerRef.current.scrollTo({ left: clientWidth * index, behavior: 'smooth' });
+  };
 
   return (
     <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
@@ -248,20 +266,34 @@ export default function AnnouncementsSection() {
             </Card>
           </AnimatedSection>
         ) : (
-          <Box sx={{ position: 'relative', px: { xs: 4, md: 6 } }}>
-            {activeAnnouncements.length > itemsVisible && (
+          <Box sx={{ position: 'relative', px: { xs: 0, md: 6 } }}>
+            {!isMobile && activeAnnouncements.length > itemsVisible && (
               <IconButton 
                 onClick={handlePrev}
-                sx={{ position: 'absolute', left: { xs: -10, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+                sx={{ position: 'absolute', left: { xs: 0, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
                 <ChevronLeftIcon />
               </IconButton>
             )}
             
-            <Grid container spacing={4} justifyContent="center">
+            <Box 
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              sx={{ 
+                display: 'flex', 
+                gap: 4, 
+                overflowX: 'auto', 
+                scrollSnapType: 'x mandatory',
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': { display: 'none' },
+                scrollBehavior: 'smooth',
+                px: { xs: 2, md: 0 },
+                pb: 2
+              }}
+            >
               {isLoading
                 ? Array.from({ length: itemsVisible }).map((_, i) => (
-                    <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Box key={i} sx={{ scrollSnapAlign: 'start', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
                       <Card sx={{ height: '100%' }}>
                         <Skeleton variant="rectangular" height={220} />
                         <CardContent>
@@ -270,24 +302,45 @@ export default function AnnouncementsSection() {
                           <Skeleton variant="text" width="80%" height={24} />
                         </CardContent>
                       </Card>
-                    </Grid>
+                    </Box>
                   ))
-                : visibleAnnouncements.map((announcement, i) => (
-                    <Grid key={announcement.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                : activeAnnouncements.map((announcement, i) => (
+                    <Box key={announcement.id} sx={{ scrollSnapAlign: 'start', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
                       <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
                         <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
                       </AnimatedSection>
-                    </Grid>
+                    </Box>
                   ))}
-            </Grid>
+            </Box>
 
-            {activeAnnouncements.length > itemsVisible && (
+            {!isMobile && activeAnnouncements.length > itemsVisible && (
               <IconButton 
                 onClick={handleNext}
-                sx={{ position: 'absolute', right: { xs: -10, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+                sx={{ position: 'absolute', right: { xs: 0, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
                 <ChevronRightIcon />
               </IconButton>
+            )}
+
+            {/* Pagination Dots */}
+            {numPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 3 }}>
+                {Array.from({ length: numPages }).map((_, i) => (
+                  <Box
+                    key={i}
+                    onClick={() => handleDotClick(i)}
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: i === currentPage ? 'primary.main' : 'grey.300',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s',
+                      '&:hover': { bgcolor: 'primary.light' }
+                    }}
+                  />
+                ))}
+              </Box>
             )}
           </Box>
         )}
