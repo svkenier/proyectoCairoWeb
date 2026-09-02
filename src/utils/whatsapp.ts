@@ -43,7 +43,7 @@ export function getAdoptionUrl(phone: string, params: WhatsAppAdoptionParams): s
     `${window.location.origin}/mascotas/${params.id}`;
 
   const message =
-    `¡Hola! 🐾 Me interesa adoptar a *${params.nombre}* (ID: ${params.id}).\n` +
+    `¡Hola! Me interesa adoptar a *${params.nombre}* (ID: ${params.id}).\n` +
     `Vi su ficha aquí: ${fichaUrl}\n\n` +
     `¿Podrían darme más información sobre el proceso de adopción?`;
 
@@ -65,7 +65,7 @@ export function getRescueUrl(phone: string, params: WhatsAppRescueParams = {}): 
   const descripcion = params.descripcion ?? '';
 
   const message =
-    `🚨 *Reporte de Rescate / Emergencia*\n\n` +
+    `*Reporte de Rescate / Emergencia*\n\n` +
     `Encontré un animal que necesita ayuda urgente.\n` +
     (descripcion ? `*Descripción:* ${descripcion}\n` : '') +
     `*Ubicación:* [Por favor, enviaré mi ubicación en este chat]\n\n` +
@@ -80,11 +80,11 @@ export function getRescueUrl(phone: string, params: WhatsAppRescueParams = {}): 
  */
 export function getDonationUrl(phone: string): string {
   const message =
-    `¡Hola! 💚 Quisiera apoyar al refugio.\n\n` +
+    `¡Hola! Quisiera apoyar al refugio.\n\n` +
     `Me gustaría obtener información sobre:\n` +
-    `• 🐾 Apadrinamiento de mascotas\n` +
-    `• 🤝 Entrega responsable de animales\n` +
-    `• 💛 Donaciones al refugio\n\n` +
+    `- Apadrinamiento de mascotas\n` +
+    `- Entrega responsable de animales\n` +
+    `- Donaciones al refugio\n\n` +
     `¿Cómo puedo colaborar?`;
 
   return buildWaUrl(phone, message);
