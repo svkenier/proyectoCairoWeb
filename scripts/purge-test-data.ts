@@ -1,7 +1,6 @@
 import { Redis } from '@upstash/redis';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
+
 
 dotenv.config();
 dotenv.config({ path: '.env.local' });

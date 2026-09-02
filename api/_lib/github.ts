@@ -81,6 +81,48 @@ export async function getFile(path: string): Promise<GHFileInfo | null> {
   }
 }
 
+export interface GHEtagResponse {
+  data: GHFileInfo | null;
+  etag: string | null;
+  notModified: boolean;
+}
+
+/**
+ * Obtiene un archivo validando ETag (If-None-Match).
+ * Si GitHub responde 304, devuelve notModified: true.
+ */
+export async function getFileWithETag(path: string, ifNoneMatch?: string): Promise<GHEtagResponse> {
+  const headers: Record<string, string> = { ...GH_HEADERS };
+  if (ifNoneMatch) {
+    headers['If-None-Match'] = ifNoneMatch;
+  }
+
+  const response = await fetch(`${GH_BASE}/${path}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (response.status === 304) {
+    return { data: null, etag: response.headers.get('ETag'), notModified: true };
+  }
+
+  if (response.status === 404) {
+    return { data: null, etag: null, notModified: false };
+  }
+
+  const json = await response.json() as Record<string, unknown>;
+
+  if (!response.ok) {
+    throw new Error((json['message'] as string) ?? `GitHub API error: ${response.status}`);
+  }
+
+  return {
+    data: json as unknown as GHFileInfo,
+    etag: response.headers.get('ETag'),
+    notModified: false,
+  };
+}
+
 /**
  * Crea o actualiza un archivo en GitHub.
  * @param path     - Ruta relativa al repositorio (sin slash inicial).
@@ -126,7 +168,7 @@ export async function deleteFile(
 /** Rutas a los JSON maestros. */
 export const PETS_JSON_PATH = 'data/pets.json';
 export const petJsonPath = (id: string) => `data/pets/${id}.json`;
-export const SHELTER_INFO_PATH = 'data/shelter-info.json';
+export const SHELTER_INFO_PATH = 'data/settings/general.json';
 
 /** Ruta de la imagen principal de una mascota. */
 export const petMainImgPath = (id: string) => `images/pets/${id}.webp`;

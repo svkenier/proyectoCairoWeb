@@ -99,6 +99,7 @@ export default function Admin() {
         total: pets.length 
       } as PetsIndex;
     },
+    staleTime: 60000,
   });
 
   // Eliminar mascota (API)

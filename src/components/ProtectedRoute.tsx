@@ -35,6 +35,8 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    let intervalId: number | undefined;
+
     const checkSession = async () => {
       try {
         await get('/auth/session');
@@ -43,25 +45,63 @@ export default function ProtectedRoute({
       }
     };
 
-    // Verificación inmediata al montar o al volver a autenticarse
-    checkSession();
+    const startPolling = () => {
+      if (intervalId) clearInterval(intervalId);
+      // Latido cada 20 segundos para respuesta pasiva
+      intervalId = window.setInterval(checkSession, 20000);
+    };
 
-    // Latido cada 3 segundos para respuesta casi en tiempo real
-    const intervalId = setInterval(checkSession, 3000);
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+      }
+    };
 
     // Revisión inmediata al recuperar el foco de la pestaña
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         checkSession();
+        startPolling();
+      } else {
+        stopPolling();
       }
     };
+
+    // Para navegadores móviles (iOS Safari, Android)
+    const handlePageShow = () => {
+      checkSession();
+      startPolling();
+    };
+    
+    const handlePageHide = () => {
+      stopPolling();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
+
+    // Verificación inicial
+    if (document.visibilityState === 'visible') {
+      checkSession();
+      startPolling();
+    }
 
     return () => {
-      clearInterval(intervalId);
+      stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pagehide', handlePageHide);
     };
   }, [isAuthenticated]);
+
+  // Verificar la sesión al cambiar de ruta interna
+  useEffect(() => {
+    if (isAuthenticated) {
+      get('/auth/session').catch(() => {});
+    }
+  }, [location.pathname, isAuthenticated]);
 
   // Mientras se restaura la sesión desde localStorage
   if (isLoading) {

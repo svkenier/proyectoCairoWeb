@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
-import { getFile, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath } from './_lib/github.js';
+import { getFile, getFileWithETag, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath } from './_lib/github.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
 import type { Announcement, AnnouncementUpsertBody } from '../src/types/announcement.js';
 
@@ -10,13 +10,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET: Público (Retorna todos, pero en Home filtraremos por is_active)
   if (req.method === 'GET') {
     try {
-      const file = await getFile(ANNOUNCEMENTS_JSON_PATH);
+      const ifNoneMatch = req.headers['if-none-match'];
+      const ghRes = await getFileWithETag(ANNOUNCEMENTS_JSON_PATH, ifNoneMatch);
+
+      if (ghRes.notModified) {
+        return res.status(304).end();
+      }
+
+      if (ghRes.etag) {
+        res.setHeader('ETag', ghRes.etag);
+      }
+
       let announcements: Announcement[] = [];
-      if (file) {
+      if (ghRes.data) {
         try {
-          const parsed = JSON.parse(Buffer.from(file.content, 'base64').toString('utf-8'));
+          const parsed = JSON.parse(Buffer.from(ghRes.data.content, 'base64').toString('utf-8'));
           announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
-        } catch (e) {
+        } catch {
           announcements = [];
         }
       }
@@ -56,7 +66,7 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
       try {
         const parsed = JSON.parse(Buffer.from(announcementsFile.content, 'base64').toString('utf-8'));
         announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
-      } catch (e) {
+      } catch {
         announcements = [];
       }
     }
@@ -154,7 +164,7 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
       try {
         const parsed = JSON.parse(Buffer.from(announcementsFile.content, 'base64').toString('utf-8'));
         announcements = Array.isArray(parsed) ? parsed : (parsed.announcements || []);
-      } catch (e) {
+      } catch {
         announcements = [];
       }
     }

@@ -33,6 +33,8 @@ export default function SettingsManager() {
 
   const { data, isLoading, isError } = useQuery<Settings>({
     queryKey: ['settings'],
+    staleTime: 60000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const res = await get<Settings | {}>('/settings');
       if (Object.keys(res).length === 0) return DEFAULT_SETTINGS;

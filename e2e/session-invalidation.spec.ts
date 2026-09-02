@@ -1,4 +1,4 @@
-import { test, expect, request as pwRequest } from '@playwright/test';
+import { test, expect, APIRequestContext } from '@playwright/test';
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -41,7 +41,7 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
   const createdTestUsers: string[] = [];
 
   // Utilidad para limpiar los usuarios de prueba en bulk
-  async function cleanupUsers(requestCtx) {
+  async function cleanupUsers(requestCtx: APIRequestContext) {
     if (createdTestUsers.length === 0) return;
     const adminToken = generateToken(SUPERADMIN, 'superadmin');
     for (const user of createdTestUsers) {
@@ -132,12 +132,12 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
     await responsePromise;
     await expect(adminPage.getByText('Sesiones invalidadas con éxito.')).toBeVisible({ timeout: 10000 });
     
-    // 3. El heartbeat de 3s detectará la revocación automáticamente.
+    // 3. El heartbeat de 20s detectará la revocación automáticamente.
     // Recargamos la página para disparar la verificación inmediata al montar ProtectedRoute.
     await userPage.reload();
-    // Con el polling de 3s y la verificación inmediata al montar, la redirección
-    // ocurre en ≤3s sin necesidad de interacción manual.
-    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 10000 });
+    // Con el polling de 20s y la verificación inmediata al montar, la redirección
+    // ocurre en ≤20s sin necesidad de interacción manual.
+    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 25000 });
 
     await userContext.close();
     await adminContext.close();
@@ -185,11 +185,11 @@ test.describe('Invalidación de Sesiones Globales y Seguridad', () => {
     await resetResponsePromise;
     await expect(adminPage.getByText(/exitosamente/i)).toBeVisible({ timeout: 10000 });
     
-    // 3. El heartbeat de 3s detectará la revocación automáticamente.
+    // 3. El heartbeat de 20s detectará la revocación automáticamente.
     // Recargamos para disparar la verificación inmediata al montar ProtectedRoute.
     await userPage.reload();
     // La verificación inmediata al montar ProtectedRoute detecta el 401 y redirige.
-    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 10000 });
+    await expect(userPage).toHaveURL(/.*\/login/, { timeout: 25000 });
 
     await userContext.close();
     await adminContext.close();

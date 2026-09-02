@@ -51,8 +51,8 @@ El proyecto utiliza tecnologías modernas para garantizar rendimiento, escalabil
 
 ### Backend (Serverless)
 - **Entorno:** [Vercel Serverless Functions](https://vercel.com/docs/functions) (`/api`)
-- **Almacenamiento (Storage):** Arquitectura Headless CMS usando la **API de GitHub**.
-- **Cache & Rate Limiting:** [Upstash Redis](https://upstash.com/) + `@upstash/ratelimit`
+- **Almacenamiento (Storage):** Arquitectura Headless CMS usando la **API de GitHub** para todo el contenido público (`data/pets.json`, `data/announcements.json` y configuraciones en `data/settings/`).
+- **Cache, Sesiones & Rate Limiting:** [Upstash Redis](https://upstash.com/) + `@upstash/ratelimit` (Uso exclusivo temporal y estado efímero).
 - **Seguridad:** `bcryptjs` (Hashing), `jsonwebtoken` (Auth).
 
 ---

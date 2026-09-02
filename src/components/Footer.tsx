@@ -41,6 +41,8 @@ export default function Footer() {
 
   const { data: settings, isLoading } = useQuery<Settings>({
     queryKey: ['settings'],
+    staleTime: 60000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const res = await get<Settings | {}>('/settings');
       if (Object.keys(res).length === 0) return DEFAULT_SETTINGS;
@@ -65,7 +67,7 @@ export default function Footer() {
     let query = config.address || '';
     if (!query && config.map_url) {
       if (config.map_url.includes('/place/')) {
-        const match = config.map_url.match(/\/place\/([^\/]+)/);
+        const match = config.map_url.match(/\/place\/([^/]+)/);
         if (match) query = decodeURIComponent(match[1].replace(/\+/g, ' '));
       } else if (config.map_url.includes('?q=')) {
         const match = config.map_url.match(/[?&]q=([^&]+)/);

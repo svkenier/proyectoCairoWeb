@@ -142,5 +142,10 @@ export async function setGlobalSettings(settings: unknown): Promise<void> {
   await redis.set(SETTINGS_KEY, settings);
 }
 
+/** Elimina la configuración global de Redis. */
+export async function deleteGlobalSettings(): Promise<void> {
+  await redis.del(SETTINGS_KEY);
+}
+
 // ─── Anuncios (Eliminados de KV, ahora en GitHub) ──────────────────────────────────────────────
 
