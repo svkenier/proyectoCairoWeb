@@ -138,7 +138,7 @@ export default function Home() {
           alignItems: 'center',
           backgroundImage: "url('/hero-bg.webp')",
           backgroundSize: 'cover',
-          backgroundPosition: 'center right',
+          backgroundPosition: { xs: '80% center', md: 'center right' },
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -146,13 +146,16 @@ export default function Home() {
             left: 0,
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(135deg, rgba(16, 42, 67, 0.90) 0%, rgba(16, 42, 67, 0.65) 50%, rgba(16, 42, 67, 0.40) 100%)',
+            background: {
+              xs: 'linear-gradient(90deg, rgba(16, 42, 67, 0.95) 0%, rgba(16, 42, 67, 0.70) 50%, rgba(16, 42, 67, 0) 100%)',
+              md: 'linear-gradient(135deg, rgba(16, 42, 67, 0.90) 0%, rgba(16, 42, 67, 0.65) 50%, rgba(16, 42, 67, 0.40) 100%)'
+            },
             zIndex: 1,
           },
         }}
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-          <Box sx={{ maxWidth: '750px' }}>
+          <Box sx={{ maxWidth: { xs: '80%', sm: '70%', md: '750px' } }}>
             <AnimatedSection>
               <Chip
                 label="Refugio & Rescate Animal"
