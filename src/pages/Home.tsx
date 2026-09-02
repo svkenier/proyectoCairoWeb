@@ -138,7 +138,7 @@ export default function Home() {
           alignItems: 'center',
           backgroundImage: "url('/hero-bg.webp')",
           backgroundSize: 'cover',
-          backgroundPosition: { xs: '90% center', md: 'center right' },
+          backgroundPosition: { xs: '88% bottom', md: 'center right' },
           '&::before': {
             content: '""',
             position: 'absolute',
