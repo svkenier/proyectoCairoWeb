@@ -62,7 +62,29 @@ test.describe('Ciclo CRUD en Panel Administrativo (Real sobre staging)', () => {
     }
   }
 
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ page, request }) => {
+    // 1. Listen for ALL successful creations globally and register IDs automatically
+    page.on('response', async (response) => {
+      if (response.request().method() === 'POST' && response.status() === 201) {
+        const url = response.url();
+        if (url.includes('/api/pets')) {
+          try {
+            const data = await response.json();
+            if (data.pet?.id && !createdTestPets.includes(data.pet.id)) {
+              createdTestPets.push(data.pet.id);
+            }
+          } catch (e) {}
+        } else if (url.includes('/api/announcements')) {
+          try {
+            const data = await response.json();
+            if (data.announcement?.id && !createdTestAnnouncements.includes(data.announcement.id)) {
+              createdTestAnnouncements.push(data.announcement.id);
+            }
+          } catch (e) {}
+        }
+      }
+    });
+
     testUser = `admin_test_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const adminToken = generateToken(SUPERADMIN, 'superadmin');
     
@@ -113,15 +135,10 @@ test.describe('Ciclo CRUD en Panel Administrativo (Real sobre staging)', () => {
     await page.getByRole('combobox', { name: /Sexo/i }).click();
     await page.getByRole('option', { name: 'Macho' }).click();
     
-    // Esperar a que la petición a GitHub termine exitosamente y obtener el ID asignado
+    // Esperar a que la petición a GitHub termine exitosamente
     const createPetPromise = page.waitForResponse(res => res.url().includes('/api/pets') && res.status() === 201);
     await page.getByRole('button', { name: /Crear mascota/i }).click();
-    
-    const petResponse = await createPetPromise;
-    const petData = await petResponse.json();
-    if (petData.pet?.id) {
-      createdTestPets.push(petData.pet.id);
-    }
+    await createPetPromise;
 
     // Verificar que aparece en la tabla/UI
     await expect(page.getByText(uniquePetName).first()).toBeAttached({ timeout: 20000 });
@@ -137,12 +154,7 @@ test.describe('Ciclo CRUD en Panel Administrativo (Real sobre staging)', () => {
 
     const createAnnouncePromise = page.waitForResponse(res => res.url().includes('/api/announcements') && res.status() === 201);
     await page.getByRole('button', { name: /Crear anuncio/i }).click();
-    
-    const announceResponse = await createAnnouncePromise;
-    const announceData = await announceResponse.json();
-    if (announceData.announcement?.id) {
-      createdTestAnnouncements.push(announceData.announcement.id);
-    }
+    await createAnnouncePromise;
 
     // Verificar que el anuncio creado aparece
     await expect(page.getByText(uniqueAnnouncementTitle).first()).toBeAttached({ timeout: 20000 });
