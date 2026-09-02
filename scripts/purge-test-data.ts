@@ -11,7 +11,6 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN ?? '',
 });
 
-// Candado de Seguridad (Production Guard)
 const TARGET_BRANCH = process.env.GITHUB_BRANCH || 'staging';
 if (TARGET_BRANCH === 'main' || TARGET_BRANCH === 'production') {
   console.error('[SECURITY ERROR] Tests E2E cannot run against production (main branch). Switch to staging.');

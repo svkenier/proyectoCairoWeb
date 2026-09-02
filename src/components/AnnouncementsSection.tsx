@@ -14,12 +14,17 @@ import CardMedia from '@mui/material/CardMedia';
 import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon    from '@mui/icons-material/AccessTime';
 import LocationOnIcon    from '@mui/icons-material/LocationOn';
 import WhatsAppIcon      from '@mui/icons-material/WhatsApp';
 import CampaignIcon      from '@mui/icons-material/Campaign';
+import ChevronLeftIcon   from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { get } from '@/api/client';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -180,6 +185,33 @@ export default function AnnouncementsSection() {
   // Pre-codificamos el teléfono si existe
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const itemsVisible = isMobile ? 1 : isTablet ? 2 : 3;
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handleNext = () => {
+    if (currentIndex + itemsVisible < activeAnnouncements.length) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      setCurrentIndex(0);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    } else {
+      setCurrentIndex(Math.max(0, activeAnnouncements.length - itemsVisible));
+    }
+  };
+
+  // Asegurarnos de que el índice es válido si cambia el tamaño de pantalla
+  const safeIndex = Math.min(currentIndex, Math.max(0, activeAnnouncements.length - itemsVisible));
+  const visibleAnnouncements = activeAnnouncements.slice(safeIndex, safeIndex + itemsVisible);
+
   return (
     <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
       <Container maxWidth="lg">
@@ -216,28 +248,48 @@ export default function AnnouncementsSection() {
             </Card>
           </AnimatedSection>
         ) : (
-          <Grid container spacing={4} justifyContent="center">
-            {isLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Card sx={{ height: '100%' }}>
-                      <Skeleton variant="rectangular" height={220} />
-                      <CardContent>
-                        <Skeleton variant="text" width="60%" height={32} />
-                        <Skeleton variant="text" width="100%" height={24} />
-                        <Skeleton variant="text" width="80%" height={24} />
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))
-              : activeAnnouncements.map((announcement, i) => (
-                  <Grid key={announcement.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
-                      <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
-                    </AnimatedSection>
-                  </Grid>
-                ))}
-          </Grid>
+          <Box sx={{ position: 'relative', px: { xs: 4, md: 6 } }}>
+            {activeAnnouncements.length > itemsVisible && (
+              <IconButton 
+                onClick={handlePrev}
+                sx={{ position: 'absolute', left: { xs: -10, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+              >
+                <ChevronLeftIcon />
+              </IconButton>
+            )}
+            
+            <Grid container spacing={4} justifyContent="center">
+              {isLoading
+                ? Array.from({ length: itemsVisible }).map((_, i) => (
+                    <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Card sx={{ height: '100%' }}>
+                        <Skeleton variant="rectangular" height={220} />
+                        <CardContent>
+                          <Skeleton variant="text" width="60%" height={32} />
+                          <Skeleton variant="text" width="100%" height={24} />
+                          <Skeleton variant="text" width="80%" height={24} />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))
+                : visibleAnnouncements.map((announcement, i) => (
+                    <Grid key={announcement.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
+                        <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                      </AnimatedSection>
+                    </Grid>
+                  ))}
+            </Grid>
+
+            {activeAnnouncements.length > itemsVisible && (
+              <IconButton 
+                onClick={handleNext}
+                sx={{ position: 'absolute', right: { xs: -10, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            )}
+          </Box>
         )}
       </Container>
     </Box>
