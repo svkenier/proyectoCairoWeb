@@ -219,9 +219,6 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
     petsFile.sha,
   );
 
-  // Invalida caché
-  const { invalidatePetsCache } = await import('./_lib/kv.js');
-  await invalidatePetsCache();
 
   // Eliminar archivo JSON individual
   try {
