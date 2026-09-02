@@ -136,9 +136,12 @@ export default function Home() {
           minHeight: { xs: '75vh', md: '80vh' },
           display: 'flex',
           alignItems: 'center',
-          backgroundImage: "url('/hero-bg.webp')",
+          backgroundImage: {
+            xs: "url('/hero-mobile.webp')",
+            md: "url('/hero-desktop.webp')"
+          },
           backgroundSize: 'cover',
-          backgroundPosition: { xs: '88% bottom', md: 'center right' },
+          backgroundPosition: { xs: 'center center', md: 'center right' },
           '&::before': {
             content: '""',
             position: 'absolute',
