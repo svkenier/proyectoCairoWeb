@@ -70,7 +70,11 @@ function formatDateNatural(dateString: string): string {
 
 function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Announcement; whatsappNumber: string }) {
   const [expanded, setExpanded] = useState(false);
-  const text = encodeURIComponent(`¡Hola! Quisiera más información sobre el evento: *${announcement.title}*`);
+  const message = 
+`¡Hola! Quisiera consultar más información sobre: *${announcement.title}*
+
+¿Podrían darme más detalles al respecto?`;
+  const text = encodeURIComponent(message);
   const waUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${text}` : '#';
   const isLong = announcement.description.length > 120;
 

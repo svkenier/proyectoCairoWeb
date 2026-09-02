@@ -16,10 +16,7 @@ export interface WhatsAppAdoptionParams {
   fichaUrl?: string;
 }
 
-export interface WhatsAppRescueParams {
-  /** Descripción breve del animal en calle (opcional, para pre-rellenar el mensaje). */
-  descripcion?: string;
-}
+
 
 // ─── Función interna ──────────────────────────────────────────────────────────
 
@@ -42,10 +39,14 @@ export function getAdoptionUrl(phone: string, params: WhatsAppAdoptionParams): s
     params.fichaUrl ??
     `${window.location.origin}/mascotas/${params.id}`;
 
-  const message =
-    `¡Hola! Me interesa adoptar a *${params.nombre}* (ID: ${params.id}).\n` +
-    `Vi su ficha aquí: ${fichaUrl}\n\n` +
-    `¿Podrían darme más información sobre el proceso de adopción?`;
+  const capitalizedPetName = params.nombre ? params.nombre.charAt(0).toUpperCase() + params.nombre.slice(1) : '';
+
+  const message = 
+`¡Hola! Me interesa adoptar a *${capitalizedPetName}* (ID: ${params.id}).
+
+Vi su ficha aquí: ${fichaUrl}
+
+¿Podrían darme más información sobre el proceso de adopción?`;
 
   return buildWaUrl(phone, message);
 }
@@ -61,15 +62,14 @@ export function getGenericAdoptionUrl(phone: string): string {
 /**
  * Genera el enlace de WhatsApp para reportar un animal en situación de calle o emergencia.
  */
-export function getRescueUrl(phone: string, params: WhatsAppRescueParams = {}): string {
-  const descripcion = params.descripcion ?? '';
+export function getRescueUrl(phone: string): string {
+  const message = 
+`¡Hola! *Reporte de Rescate / Emergencia*
 
-  const message =
-    `*Reporte de Rescate / Emergencia*\n\n` +
-    `Encontré un animal que necesita ayuda urgente.\n` +
-    (descripcion ? `*Descripción:* ${descripcion}\n` : '') +
-    `*Ubicación:* [Por favor, enviaré mi ubicación en este chat]\n\n` +
-    `¿Pueden asistir o guiarme?`;
+Encontré un animal que necesita ayuda urgente.
+Ubicación: [Enviaré mi ubicación a continuación por este chat]
+
+¿Podrían indicarme cómo proceder o si pueden asistir?`;
 
   return buildWaUrl(phone, message);
 }
@@ -95,7 +95,10 @@ Me gustaría recibir información sobre:
  * Genera el enlace de WhatsApp para postularse como voluntario.
  */
 export function getVolunteerUrl(phone: string): string {
-  const message = `¡Hola! Me gustaría postularme como voluntario en el refugio para colaborar en lo que pueda.`;
+  const message = 
+`¡Hola! Me gustaría postularme como voluntario en el refugio para colaborar en las actividades del equipo.
+
+¿Cuáles son los requisitos o cómo puedo sumarme?`;
   return buildWaUrl(phone, message);
 }
 
