@@ -33,6 +33,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
+dayjs.locale('es');
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { post, put, formatApiError } from '@/api/client';
 import { optimizeImage } from '@/utils/imageOptimizer';

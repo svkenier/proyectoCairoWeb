@@ -48,6 +48,26 @@ const TYPE_LABELS: Record<AnnouncementType, string> = {
   general: 'Anuncio',
 };
 
+function formatDateNatural(dateString: string): string {
+  if (!dateString) return '';
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    if (!isNaN(date.getTime())) {
+      const dayStr = day.padStart(2, '0');
+      const monthNames = [
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+      ];
+      const monthStr = monthNames[date.getMonth()];
+      return `${dayStr} de ${monthStr} del ${year}`;
+    }
+  }
+  return dateString;
+}
+
+
 function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Announcement; whatsappNumber: string }) {
   const [expanded, setExpanded] = useState(false);
   const text = encodeURIComponent(`¡Hola! Quisiera más información sobre el evento: ${announcement.title}`);
@@ -93,7 +113,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2, mt: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
             <CalendarTodayIcon fontSize="small" />
-            <Typography variant="body2">{announcement.date}</Typography>
+            <Typography variant="body2">{formatDateNatural(announcement.date)}</Typography>
           </Box>
           
           {announcement.time && (
