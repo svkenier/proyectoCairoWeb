@@ -8,13 +8,15 @@
  * 4. Contacto — ContactSection (3 canales WhatsApp).
  */
 
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Grid from '@mui/material/Grid2';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
@@ -26,6 +28,8 @@ import ChatOutlinedIcon        from '@mui/icons-material/ChatOutlined';
 import HomeOutlinedIcon        from '@mui/icons-material/HomeOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PetsIcon from '@mui/icons-material/Pets';
+import ChevronLeftIcon   from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
 import Navbar          from '@/components/Navbar';
 import Footer          from '@/components/Footer';
 import PetCard, { PetCardSkeleton } from '@/components/PetCard';
@@ -75,11 +79,6 @@ export default function Home() {
   });
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  // Mobile Pagination State for Pets Carousel
-  const [currentPetPage, setCurrentPetPage] = useState(0);
-  const petScrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Mostrar hasta 8 mascotas: priorizar destacadas, rellenar con recientes
   const displayPets = useMemo(() => {
@@ -89,74 +88,37 @@ export default function Home() {
     const regular = available.filter(p => p.destacado !== true).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return [...featured, ...regular].slice(0, 8);
   }, [data]);
+  
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const itemsVisible = isDesktop ? 3 : isTablet ? 2 : 1;
+  const loopActive = displayPets.length > itemsVisible;
 
-  // --- Infinite Loop Logic ---
-  const N = displayPets.length;
-  const infinitePets = useMemo(() => {
-    if (N === 0) return [];
-    return [...displayPets, ...displayPets, ...displayPets];
-  }, [displayPets, N]);
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: loopActive,
+    align: 'start',
+    active: loopActive,
+  });
 
-  const getCardWidth = (container: HTMLDivElement) => {
-    const firstChild = container.children[0] as HTMLElement;
-    if (!firstChild) return 0;
-    const gap = parseFloat(window.getComputedStyle(container).gap) || 0;
-    return firstChild.offsetWidth + gap;
-  };
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
-  // Initial scroll to the middle block
+  const onInit = useCallback((emblaApi: any) => {
+    setScrollSnaps(emblaApi.scrollSnapList());
+  }, []);
+
+  const onSelect = useCallback((emblaApi: any) => {
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, []);
+
   useEffect(() => {
-    if (isMobile && N > 0 && petScrollContainerRef.current) {
-      const container = petScrollContainerRef.current;
-      const cardWidth = getCardWidth(container);
-      if (cardWidth > 0) {
-        container.style.scrollBehavior = 'auto';
-        container.scrollLeft = cardWidth * N;
-        requestAnimationFrame(() => {
-          if (petScrollContainerRef.current) {
-            petScrollContainerRef.current.style.scrollBehavior = 'smooth';
-          }
-        });
-      }
-    }
-  }, [isMobile, N]);
+    if (!emblaApi) return;
+    onInit(emblaApi);
+    onSelect(emblaApi);
+    emblaApi.on('reInit', onInit).on('reInit', onSelect).on('select', onSelect);
+  }, [emblaApi, onInit, onSelect]);
 
-  const handlePetScroll = () => {
-    if (!petScrollContainerRef.current || N === 0) return;
-    const container = petScrollContainerRef.current;
-    const { scrollLeft } = container;
-    const cardWidth = getCardWidth(container);
-    if (cardWidth === 0) return;
-    
-    // Calculate current page based on middle block
-    let normalizedIndex = Math.round(scrollLeft / cardWidth) - N;
-    if (normalizedIndex < 0) normalizedIndex = (normalizedIndex % N) + N;
-    if (normalizedIndex >= N) normalizedIndex = normalizedIndex % N;
-    
-    if (normalizedIndex !== currentPetPage && normalizedIndex >= 0 && normalizedIndex < N) {
-      setCurrentPetPage(normalizedIndex);
-    }
-
-    // Infinite loop jump
-    if (scrollLeft <= cardWidth * (N - 0.5)) {
-      container.style.scrollBehavior = 'auto';
-      container.scrollLeft = scrollLeft + cardWidth * N;
-      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
-    } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
-      container.style.scrollBehavior = 'auto';
-      container.scrollLeft = scrollLeft - cardWidth * N;
-      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
-    }
-  };
-
-  const handlePetDotClick = (index: number) => {
-    if (!petScrollContainerRef.current || N === 0) return;
-    const container = petScrollContainerRef.current;
-    const cardWidth = getCardWidth(container);
-    const targetLeft = cardWidth * (N + index);
-    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
-  };
-  // ---------------------------
+  const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -300,80 +262,86 @@ export default function Home() {
             </Alert>
           )}
 
-          {isMobile ? (
-            <Box sx={{ position: 'relative', px: 0 }}>
+          <Box sx={{ position: 'relative', px: { xs: 0, md: 6 } }}>
+            {isDesktop && loopActive && (
+              <IconButton 
+                onClick={() => emblaApi && emblaApi.scrollPrev()}
+                sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+              >
+                <ChevronLeftIcon />
+              </IconButton>
+            )}
+
+            <Box sx={{ overflow: 'hidden' }} ref={emblaRef}>
               <Box 
-                ref={petScrollContainerRef}
-                onScroll={handlePetScroll}
                 sx={{ 
                   display: 'flex', 
-                  gap: 0, 
-                  overflowX: 'auto', 
-                  scrollSnapType: 'x mandatory',
-                  scrollbarWidth: 'none',
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch',
-                  px: 0,
-                  pb: 2
+                  touchAction: 'pan-y', 
+                  ml: loopActive ? { xs: 0, sm: -2, md: -3 } : 0,
+                  justifyContent: loopActive ? 'flex-start' : 'center',
+                  gap: loopActive ? 0 : { xs: 2, sm: 3 }
                 }}
               >
                 {isLoading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <Box key={i} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: '100%' }}>
-                        <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
+                  ? Array.from({ length: itemsVisible }).map((_, i) => (
+                      <Box key={i} sx={{ 
+                        flex: '0 0 auto', 
+                        minWidth: 0, 
+                        pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
+                        width: { xs: '100%', sm: '50%', md: '33.3333%' } 
+                      }}>
+                        <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
                           <PetCardSkeleton />
                         </Box>
                       </Box>
                     ))
-                  : infinitePets.map((pet, i) => (
-                      <Box key={`${pet.id}-${i}`} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: '100%' }}>
-                        <AnimatedSection delay={0} sx={{ height: '100%' }}>
-                          <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
+                  : displayPets.map((pet, i) => (
+                      <Box key={pet.id} sx={{ 
+                        flex: '0 0 auto', 
+                        minWidth: 0, 
+                        pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
+                        width: { xs: '100%', sm: '50%', md: '33.3333%' } 
+                      }}>
+                        <AnimatedSection delay={i * 60} sx={{ height: '100%' }}>
+                          <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
                             <PetCard pet={pet} />
                           </Box>
                         </AnimatedSection>
                       </Box>
                     ))}
               </Box>
-              
-              {displayPets.length > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
-                  {displayPets.map((_, i) => (
-                    <Box
-                      key={i}
-                      onClick={() => handlePetDotClick(i)}
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        bgcolor: i === currentPetPage ? 'primary.main' : 'grey.300',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s',
-                        '&:hover': { bgcolor: 'primary.light' }
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
             </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {isLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
-                    <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-                      <PetCardSkeleton />
-                    </Grid>
-                  ))
-                : displayPets.map((pet, i) => (
-                    <Grid key={pet.id} size={{ xs: 12, sm: 6, md: 3 }}>
-                      <AnimatedSection delay={i * 60}>
-                        <PetCard pet={pet} />
-                      </AnimatedSection>
-                    </Grid>
-                  ))}
-            </Grid>
-          )}
+
+            {isDesktop && loopActive && (
+              <IconButton 
+                onClick={() => emblaApi && emblaApi.scrollNext()}
+                sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            )}
+
+            {/* Dots */}
+            {!isLoading && scrollSnaps.length > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 3 }}>
+                {scrollSnaps.map((_, i) => (
+                  <Box
+                    key={i}
+                    onClick={() => scrollTo(i)}
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: i === selectedIndex ? 'primary.main' : 'grey.300',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.3s',
+                      '&:hover': { bgcolor: 'primary.light' }
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
 
           {!isLoading && displayPets.length > 0 && (
             <AnimatedSection sx={{ textAlign: 'center', mt: 5 }}>

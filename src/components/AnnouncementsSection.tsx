@@ -2,7 +2,8 @@
  * AnnouncementsSection — Sección pública para visualizar eventos activos
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -202,100 +203,38 @@ export default function AnnouncementsSection() {
   ) || [];
 
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
-
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const itemsVisible = isMobile ? 1 : isTablet ? 2 : 3;
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const itemsVisible = isDesktop ? 3 : isTablet ? 2 : 1;
+  const loopActive = activeAnnouncements.length > itemsVisible;
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: loopActive,
+    align: 'start',
+    active: loopActive,
+  });
 
-  const N = activeAnnouncements.length;
-  // Duplicate array 3 times for true infinite loop
-  const infiniteAnnouncements = useMemo(() => {
-    if (N === 0) return [];
-    return [...activeAnnouncements, ...activeAnnouncements, ...activeAnnouncements];
-  }, [activeAnnouncements]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
-  const numPages = Math.ceil(N / itemsVisible);
+  const onInit = useCallback((emblaApi: any) => {
+    setScrollSnaps(emblaApi.scrollSnapList());
+  }, []);
 
-  const getCardWidth = (container: HTMLDivElement) => {
-    const firstChild = container.children[0] as HTMLElement;
-    if (!firstChild) return 0;
-    const gap = parseFloat(window.getComputedStyle(container).gap) || 0;
-    return firstChild.offsetWidth + gap;
-  };
+  const onSelect = useCallback((emblaApi: any) => {
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, []);
 
-  // Initial scroll to the middle block
   useEffect(() => {
-    if (N > 0 && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const cardWidth = getCardWidth(container);
-      if (cardWidth > 0) {
-        // Disable smooth scroll temporarily
-        container.style.scrollBehavior = 'auto';
-        container.scrollLeft = cardWidth * N;
-        // Re-enable smooth scroll
-        requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.style.scrollBehavior = 'smooth';
-          }
-        });
-      }
-    }
-  }, [N]);
+    if (!emblaApi) return;
+    onInit(emblaApi);
+    onSelect(emblaApi);
+    emblaApi.on('reInit', onInit).on('reInit', onSelect).on('select', onSelect);
+  }, [emblaApi, onInit, onSelect]);
 
-  const handleScroll = () => {
-    if (!scrollContainerRef.current || N === 0) return;
-    const container = scrollContainerRef.current;
-    const { scrollLeft } = container;
-    const cardWidth = getCardWidth(container);
-    if (cardWidth === 0) return;
-    
-    // Calculate current page based on middle block
-    let normalizedIndex = Math.round(scrollLeft / cardWidth) - N;
-    if (normalizedIndex < 0) normalizedIndex = (normalizedIndex % N) + N;
-    if (normalizedIndex >= N) normalizedIndex = normalizedIndex % N;
-    
-    const page = Math.floor(normalizedIndex / itemsVisible);
-    if (page !== currentPage && page >= 0 && page < numPages) {
-      setCurrentPage(page);
-    }
-
-    // Infinite loop jump
-    if (scrollLeft <= cardWidth * (N - 0.5)) {
-      container.style.scrollBehavior = 'auto';
-      container.scrollLeft = scrollLeft + cardWidth * N;
-      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
-    } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
-      container.style.scrollBehavior = 'auto';
-      container.scrollLeft = scrollLeft - cardWidth * N;
-      requestAnimationFrame(() => { container.style.scrollBehavior = 'smooth'; });
-    }
-  };
-
-  const handleNext = () => {
-    if (!scrollContainerRef.current || N === 0) return;
-    const container = scrollContainerRef.current;
-    const cardWidth = getCardWidth(container);
-    container.scrollBy({ left: cardWidth, behavior: 'smooth' });
-  };
-
-  const handlePrev = () => {
-    if (!scrollContainerRef.current || N === 0) return;
-    const container = scrollContainerRef.current;
-    const cardWidth = getCardWidth(container);
-    container.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-  };
-
-  const handleDotClick = (index: number) => {
-    if (!scrollContainerRef.current || N === 0) return;
-    const container = scrollContainerRef.current;
-    const cardWidth = getCardWidth(container);
-    const targetLeft = cardWidth * (N + (index * itemsVisible));
-    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
-  };
+  const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
   return (
     <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
@@ -334,78 +273,83 @@ export default function AnnouncementsSection() {
           </AnimatedSection>
         ) : (
           <Box sx={{ position: 'relative', px: { xs: 0, md: 6 } }}>
-            {!isMobile && activeAnnouncements.length > itemsVisible && (
+            {!isMobile && loopActive && (
               <IconButton 
-                onClick={handlePrev}
-                sx={{ position: 'absolute', left: { xs: 0, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+                onClick={() => emblaApi && emblaApi.scrollPrev()}
+                sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
                 <ChevronLeftIcon />
               </IconButton>
             )}
             
-            <Box 
-              ref={scrollContainerRef}
-              onScroll={handleScroll}
-              sx={{ 
-                display: 'flex', 
-                gap: { xs: 0, sm: 2, md: 4 }, 
-                overflowX: 'auto', 
-                scrollSnapType: 'x mandatory',
-                scrollbarWidth: 'none',
-                '&::-webkit-scrollbar': { display: 'none' },
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                px: 0,
-                pb: 2
-              }}
-            >
-              {isLoading
-                ? Array.from({ length: itemsVisible }).map((_, i) => (
-                    <Box key={i} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
-                      <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
-                        <Card sx={{ height: '100%' }}>
-                          <Skeleton variant="rectangular" height={220} />
-                          <CardContent>
-                            <Skeleton variant="text" width="60%" height={32} />
-                            <Skeleton variant="text" width="100%" height={24} />
-                            <Skeleton variant="text" width="80%" height={24} />
-                          </CardContent>
-                        </Card>
-                      </Box>
-                    </Box>
-                  ))
-                : infiniteAnnouncements.map((announcement, i) => (
-                    <Box key={`${announcement.id}-${i}`} sx={{ scrollSnapAlign: 'center', scrollSnapStop: 'always', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
-                      <AnimatedSection delay={0} sx={{ height: '100%' }}>
+            <Box sx={{ overflow: 'hidden' }} ref={emblaRef}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  touchAction: 'pan-y', 
+                  ml: loopActive ? { xs: 0, sm: -2, md: -3 } : 0,
+                  justifyContent: loopActive ? 'flex-start' : 'center',
+                  gap: loopActive ? 0 : { xs: 2, sm: 3 }
+                }}
+              >
+                {isLoading
+                  ? Array.from({ length: itemsVisible }).map((_, i) => (
+                      <Box key={i} sx={{ 
+                        flex: '0 0 auto', 
+                        minWidth: 0, 
+                        pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
+                        width: { xs: '100%', sm: '50%', md: '33.3333%' } 
+                      }}>
                         <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
-                          <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                          <Card sx={{ height: '100%' }}>
+                            <Skeleton variant="rectangular" height={220} />
+                            <CardContent>
+                              <Skeleton variant="text" width="60%" height={32} />
+                              <Skeleton variant="text" width="100%" height={24} />
+                              <Skeleton variant="text" width="80%" height={24} />
+                            </CardContent>
+                          </Card>
                         </Box>
-                      </AnimatedSection>
-                    </Box>
-                  ))}
+                      </Box>
+                    ))
+                  : activeAnnouncements.map((announcement, i) => (
+                      <Box key={announcement.id} sx={{ 
+                        flex: '0 0 auto', 
+                        minWidth: 0, 
+                        pl: loopActive ? { xs: 0, sm: 2, md: 3 } : 0, 
+                        width: { xs: '100%', sm: '50%', md: '33.3333%' } 
+                      }}>
+                        <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
+                          <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
+                            <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                          </Box>
+                        </AnimatedSection>
+                      </Box>
+                    ))}
+              </Box>
             </Box>
 
-            {!isMobile && activeAnnouncements.length > itemsVisible && (
+            {!isMobile && loopActive && (
               <IconButton 
-                onClick={handleNext}
-                sx={{ position: 'absolute', right: { xs: 0, md: 0 }, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+                onClick={() => emblaApi && emblaApi.scrollNext()}
+                sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
                 <ChevronRightIcon />
               </IconButton>
             )}
 
             {/* Pagination Dots */}
-            {numPages > 1 && (
+            {!isLoading && scrollSnaps.length > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 3 }}>
-                {Array.from({ length: numPages }).map((_, i) => (
+                {scrollSnaps.map((_, i) => (
                   <Box
                     key={i}
-                    onClick={() => handleDotClick(i)}
+                    onClick={() => scrollTo(i)}
                     sx={{
                       width: 10,
                       height: 10,
                       borderRadius: '50%',
-                      bgcolor: i === currentPage ? 'primary.main' : 'grey.300',
+                      bgcolor: i === selectedIndex ? 'primary.main' : 'grey.300',
                       cursor: 'pointer',
                       transition: 'background-color 0.3s',
                       '&:hover': { bgcolor: 'primary.light' }
