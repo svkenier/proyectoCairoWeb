@@ -140,10 +140,15 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2, mt: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
             <CalendarTodayIcon fontSize="small" />
-            <Typography variant="body2">{formatDateNatural(announcement.date)}</Typography>
+            <Typography variant="body2">
+              {announcement.type === 'perdida' 
+                ? (announcement.date ? `Visto por última vez: ${formatDateNatural(announcement.date)}${announcement.time ? ` a las ${announcement.time}` : ''}` : 'Fecha no especificada')
+                : formatDateNatural(announcement.date)
+              }
+            </Typography>
           </Box>
           
-          {announcement.time && (
+          {announcement.type !== 'perdida' && announcement.time && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
               <AccessTimeIcon fontSize="small" />
               <Typography variant="body2">{announcement.time}</Typography>
@@ -154,7 +159,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, color: 'text.secondary' }}>
               <LocationOnIcon fontSize="small" sx={{ mt: 0.3 }} />
               <Typography variant="body2" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {announcement.location}
+                {announcement.type === 'perdida' ? `Última ubicación: ${announcement.location}` : announcement.location}
               </Typography>
             </Box>
           )}

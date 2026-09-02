@@ -62,7 +62,11 @@ const validationSchema = Yup.object({
   title: Yup.string().required('El título es obligatorio'),
   type: Yup.string().required('El tipo es obligatorio'),
   description: Yup.string().required('La descripción es obligatoria'),
-  date: Yup.string().required('La fecha es obligatoria'),
+  date: Yup.string().when('type', {
+    is: 'perdida',
+    then: (schema) => schema.notRequired(),
+    otherwise: (schema) => schema.required('La fecha es obligatoria'),
+  }),
   time: Yup.string(),
   location: Yup.string(),
   is_active: Yup.boolean(),
@@ -288,7 +292,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           <Grid size={{ xs: 12, sm: 6 }}>
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
               <DatePicker
-                label="Fecha"
+                label={formik.values.type === 'perdida' ? "Fecha en que se vio por última vez (opcional)" : "Fecha"}
                 format="DD/MM/YYYY"
                 value={formik.values.date ? dayjs(formik.values.date, 'YYYY-MM-DD') : null}
                 onChange={(newValue) => formik.setFieldValue('date', newValue ? newValue.format('YYYY-MM-DD') : '')}
@@ -307,7 +311,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label="Hora (Opcional)"
+              label={formik.values.type === 'perdida' ? "Hora aproximada (opcional)" : "Hora (Opcional)"}
               placeholder="Ej. 9:00 AM - 2:00 PM"
               name="time"
               value={formik.values.time}
@@ -319,7 +323,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
 
           <Grid size={{ xs: 12 }}>
             <TextField
-              label={formik.values.type === 'perdida' ? "Último lugar donde se vio (opcional)" : "Ubicación (Opcional)"}
+              label={formik.values.type === 'perdida' ? "Lugar donde se vio por última vez (opcional)" : "Ubicación (Opcional)"}
               placeholder={formik.values.type === 'perdida' ? "Ej: Sector La Paragua, visto por última vez cerca del parque..." : ""}
               name="location"
               value={formik.values.location}

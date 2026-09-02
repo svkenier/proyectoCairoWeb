@@ -123,7 +123,7 @@ export default function AnnouncementsManager() {
                 <Typography variant="h6" fontWeight={700} lineHeight={1.2} mb={0.5}>
                   {a.title}
                 </Typography>
-                <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" variant="outlined" sx={{ mb: 1, bgcolor: TYPE_COLORS[a.type] ? `${TYPE_COLORS[a.type]}1A` : '#71717A1A', color: TYPE_COLORS[a.type] || '#71717A', borderColor: TYPE_COLORS[a.type] || '#71717A', fontWeight: 600 }} />
+                <Chip label={(TYPE_LABELS[a.type] || 'Otro').toUpperCase()} size="small" variant="outlined" sx={{ mb: 1, backgroundColor: 'transparent', color: TYPE_COLORS[a.type] || '#71717A', borderColor: TYPE_COLORS[a.type] || '#71717A', fontWeight: 600 }} />
                 <Typography variant="body2" color="text.secondary" display="block">
                   {a.date} {a.time && `• ${a.time}`}
                 </Typography>
@@ -202,7 +202,7 @@ export default function AnnouncementsManager() {
                       <Typography variant="body2" fontWeight={600}>{a.title}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip label={TYPE_LABELS[a.type] || 'Otro'} size="small" variant="outlined" sx={{ bgcolor: TYPE_COLORS[a.type] ? `${TYPE_COLORS[a.type]}1A` : '#71717A1A', color: TYPE_COLORS[a.type] || '#71717A', borderColor: TYPE_COLORS[a.type] || '#71717A', fontWeight: 600 }} />
+                      <Chip label={(TYPE_LABELS[a.type] || 'Otro').toUpperCase()} size="small" variant="outlined" sx={{ backgroundColor: 'transparent', color: TYPE_COLORS[a.type] || '#71717A', borderColor: TYPE_COLORS[a.type] || '#71717A', fontWeight: 600 }} />
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{a.date}</Typography>
