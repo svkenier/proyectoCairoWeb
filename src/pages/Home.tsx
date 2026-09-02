@@ -8,7 +8,7 @@
  * 4. Contacto — ContactSection (3 canales WhatsApp).
  */
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
@@ -81,21 +81,6 @@ export default function Home() {
   const [currentPetPage, setCurrentPetPage] = useState(0);
   const petScrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handlePetScroll = () => {
-    if (!petScrollContainerRef.current) return;
-    const { scrollLeft, clientWidth } = petScrollContainerRef.current;
-    const page = Math.round(scrollLeft / clientWidth);
-    if (page !== currentPetPage && page >= 0) {
-      setCurrentPetPage(page);
-    }
-  };
-
-  const handlePetDotClick = (index: number) => {
-    if (!petScrollContainerRef.current) return;
-    const { clientWidth } = petScrollContainerRef.current;
-    petScrollContainerRef.current.scrollTo({ left: clientWidth * index, behavior: 'smooth' });
-  };
-
   // Mostrar hasta 8 mascotas: priorizar destacadas, rellenar con recientes
   const displayPets = useMemo(() => {
     if (!data?.mascotas) return [];
@@ -104,6 +89,74 @@ export default function Home() {
     const regular = available.filter(p => p.destacado !== true).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return [...featured, ...regular].slice(0, 8);
   }, [data]);
+
+  // --- Infinite Loop Logic ---
+  const N = displayPets.length;
+  const infinitePets = useMemo(() => {
+    if (N === 0) return [];
+    return [...displayPets, ...displayPets, ...displayPets];
+  }, [displayPets, N]);
+
+  const getCardWidth = (container: HTMLDivElement) => {
+    const firstChild = container.children[0] as HTMLElement;
+    if (!firstChild) return 0;
+    const gap = parseFloat(window.getComputedStyle(container).gap) || 0;
+    return firstChild.offsetWidth + gap;
+  };
+
+  // Initial scroll to the middle block
+  useEffect(() => {
+    if (isMobile && N > 0 && petScrollContainerRef.current) {
+      const container = petScrollContainerRef.current;
+      const cardWidth = getCardWidth(container);
+      if (cardWidth > 0) {
+        container.style.scrollBehavior = 'auto';
+        container.scrollLeft = cardWidth * N;
+        setTimeout(() => {
+          if (petScrollContainerRef.current) {
+            petScrollContainerRef.current.style.scrollBehavior = 'smooth';
+          }
+        }, 50);
+      }
+    }
+  }, [isMobile, N]);
+
+  const handlePetScroll = () => {
+    if (!petScrollContainerRef.current || N === 0) return;
+    const container = petScrollContainerRef.current;
+    const { scrollLeft } = container;
+    const cardWidth = getCardWidth(container);
+    if (cardWidth === 0) return;
+    
+    // Calculate current page based on middle block
+    let normalizedIndex = Math.round(scrollLeft / cardWidth) - N;
+    if (normalizedIndex < 0) normalizedIndex = (normalizedIndex % N) + N;
+    if (normalizedIndex >= N) normalizedIndex = normalizedIndex % N;
+    
+    if (normalizedIndex !== currentPetPage && normalizedIndex >= 0 && normalizedIndex < N) {
+      setCurrentPetPage(normalizedIndex);
+    }
+
+    // Infinite loop jump
+    if (scrollLeft <= cardWidth * (N - 0.5)) {
+      container.style.scrollBehavior = 'auto';
+      container.scrollLeft = scrollLeft + cardWidth * N;
+      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+    } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
+      container.style.scrollBehavior = 'auto';
+      container.scrollLeft = scrollLeft - cardWidth * N;
+      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+    }
+  };
+
+  const handlePetDotClick = (index: number) => {
+    if (!petScrollContainerRef.current || N === 0) return;
+    const container = petScrollContainerRef.current;
+    const cardWidth = getCardWidth(container);
+    const targetLeft = cardWidth * (N + index);
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+  };
+  // ---------------------------
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -248,32 +301,36 @@ export default function Home() {
           )}
 
           {isMobile ? (
-            <Box sx={{ position: 'relative' }}>
+            <Box sx={{ position: 'relative', px: 0 }}>
               <Box 
                 ref={petScrollContainerRef}
                 onScroll={handlePetScroll}
                 sx={{ 
                   display: 'flex', 
-                  gap: 2, 
+                  gap: 0, 
                   overflowX: 'auto', 
                   scrollSnapType: 'x mandatory',
                   scrollbarWidth: 'none',
                   '&::-webkit-scrollbar': { display: 'none' },
                   scrollBehavior: 'smooth',
-                  px: 2,
+                  px: 0,
                   pb: 2
                 }}
               >
                 {isLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
-                      <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: 'calc(100% - 32px)' }}>
-                        <PetCardSkeleton />
+                      <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: '100%' }}>
+                        <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
+                          <PetCardSkeleton />
+                        </Box>
                       </Box>
                     ))
-                  : displayPets.map((pet, i) => (
-                      <Box key={pet.id} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: 'calc(100% - 32px)' }}>
-                        <AnimatedSection delay={i * 60} sx={{ height: '100%' }}>
-                          <PetCard pet={pet} />
+                  : infinitePets.map((pet, i) => (
+                      <Box key={`${pet.id}-${i}`} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: '100%' }}>
+                        <AnimatedSection delay={0} sx={{ height: '100%' }}>
+                          <Box sx={{ maxWidth: '92%', mx: 'auto', height: '100%' }}>
+                            <PetCard pet={pet} />
+                          </Box>
                         </AnimatedSection>
                       </Box>
                     ))}

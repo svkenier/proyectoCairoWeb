@@ -2,7 +2,7 @@
  * AnnouncementsSection — Sección pública para visualizar eventos activos
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -24,7 +24,6 @@ import ChevronLeftIcon   from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useRef } from 'react';
 
 import { get } from '@/api/client';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -202,7 +201,6 @@ export default function AnnouncementsSection() {
     (a.is_active as unknown) === 1
   ) || [];
 
-  // Pre-codificamos el teléfono si existe
   const whatsappNumber = settings?.whatsapp ? settings.whatsapp.replace(/\D/g, '') : '';
 
   const theme = useTheme();
@@ -213,41 +211,90 @@ export default function AnnouncementsSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const numPages = Math.ceil(activeAnnouncements.length / itemsVisible);
+  const N = activeAnnouncements.length;
+  // Duplicate array 3 times for true infinite loop
+  const infiniteAnnouncements = useMemo(() => {
+    if (N === 0) return [];
+    return [...activeAnnouncements, ...activeAnnouncements, ...activeAnnouncements];
+  }, [activeAnnouncements]);
+
+  const numPages = Math.ceil(N / itemsVisible);
+
+  const getCardWidth = (container: HTMLDivElement) => {
+    const firstChild = container.children[0] as HTMLElement;
+    if (!firstChild) return 0;
+    const gap = parseFloat(window.getComputedStyle(container).gap) || 0;
+    return firstChild.offsetWidth + gap;
+  };
+
+  // Initial scroll to the middle block
+  useEffect(() => {
+    if (N > 0 && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const cardWidth = getCardWidth(container);
+      if (cardWidth > 0) {
+        // Disable smooth scroll temporarily
+        container.style.scrollBehavior = 'auto';
+        container.scrollLeft = cardWidth * N;
+        // Re-enable smooth scroll
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.style.scrollBehavior = 'smooth';
+          }
+        }, 50);
+      }
+    }
+  }, [N]);
 
   const handleScroll = () => {
-    if (!scrollContainerRef.current) return;
-    const { scrollLeft, clientWidth } = scrollContainerRef.current;
-    const page = Math.round(scrollLeft / clientWidth);
+    if (!scrollContainerRef.current || N === 0) return;
+    const container = scrollContainerRef.current;
+    const { scrollLeft } = container;
+    const cardWidth = getCardWidth(container);
+    if (cardWidth === 0) return;
+    
+    // Calculate current page based on middle block
+    let normalizedIndex = Math.round(scrollLeft / cardWidth) - N;
+    if (normalizedIndex < 0) normalizedIndex = (normalizedIndex % N) + N;
+    if (normalizedIndex >= N) normalizedIndex = normalizedIndex % N;
+    
+    const page = Math.floor(normalizedIndex / itemsVisible);
     if (page !== currentPage && page >= 0 && page < numPages) {
       setCurrentPage(page);
+    }
+
+    // Infinite loop jump
+    if (scrollLeft <= cardWidth * (N - 0.5)) {
+      container.style.scrollBehavior = 'auto';
+      container.scrollLeft = scrollLeft + cardWidth * N;
+      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
+    } else if (scrollLeft >= cardWidth * (N * 2 - 0.5)) {
+      container.style.scrollBehavior = 'auto';
+      container.scrollLeft = scrollLeft - cardWidth * N;
+      setTimeout(() => { container.style.scrollBehavior = 'smooth'; }, 10);
     }
   };
 
   const handleNext = () => {
-    if (!scrollContainerRef.current) return;
-    const { scrollLeft, clientWidth, scrollWidth } = scrollContainerRef.current;
-    if (scrollLeft + clientWidth >= scrollWidth - 10) {
-      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-    } else {
-      scrollContainerRef.current.scrollBy({ left: clientWidth, behavior: 'smooth' });
-    }
+    if (!scrollContainerRef.current || N === 0) return;
+    const container = scrollContainerRef.current;
+    const cardWidth = getCardWidth(container);
+    container.scrollBy({ left: cardWidth, behavior: 'smooth' });
   };
 
   const handlePrev = () => {
-    if (!scrollContainerRef.current) return;
-    const { scrollLeft, clientWidth, scrollWidth } = scrollContainerRef.current;
-    if (scrollLeft <= 10) {
-      scrollContainerRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
-    } else {
-      scrollContainerRef.current.scrollBy({ left: -clientWidth, behavior: 'smooth' });
-    }
+    if (!scrollContainerRef.current || N === 0) return;
+    const container = scrollContainerRef.current;
+    const cardWidth = getCardWidth(container);
+    container.scrollBy({ left: -cardWidth, behavior: 'smooth' });
   };
 
   const handleDotClick = (index: number) => {
-    if (!scrollContainerRef.current) return;
-    const { clientWidth } = scrollContainerRef.current;
-    scrollContainerRef.current.scrollTo({ left: clientWidth * index, behavior: 'smooth' });
+    if (!scrollContainerRef.current || N === 0) return;
+    const container = scrollContainerRef.current;
+    const cardWidth = getCardWidth(container);
+    const targetLeft = cardWidth * (N + (index * itemsVisible));
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
   };
 
   return (
@@ -301,33 +348,37 @@ export default function AnnouncementsSection() {
               onScroll={handleScroll}
               sx={{ 
                 display: 'flex', 
-                gap: 4, 
+                gap: { xs: 0, sm: 2, md: 4 }, 
                 overflowX: 'auto', 
                 scrollSnapType: 'x mandatory',
                 scrollbarWidth: 'none',
                 '&::-webkit-scrollbar': { display: 'none' },
                 scrollBehavior: 'smooth',
-                px: { xs: 2, md: 0 },
+                px: 0,
                 pb: 2
               }}
             >
               {isLoading
                 ? Array.from({ length: itemsVisible }).map((_, i) => (
-                    <Box key={i} sx={{ scrollSnapAlign: 'start', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
-                      <Card sx={{ height: '100%' }}>
-                        <Skeleton variant="rectangular" height={220} />
-                        <CardContent>
-                          <Skeleton variant="text" width="60%" height={32} />
-                          <Skeleton variant="text" width="100%" height={24} />
-                          <Skeleton variant="text" width="80%" height={24} />
-                        </CardContent>
-                      </Card>
+                    <Box key={i} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
+                      <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
+                        <Card sx={{ height: '100%' }}>
+                          <Skeleton variant="rectangular" height={220} />
+                          <CardContent>
+                            <Skeleton variant="text" width="60%" height={32} />
+                            <Skeleton variant="text" width="100%" height={24} />
+                            <Skeleton variant="text" width="80%" height={24} />
+                          </CardContent>
+                        </Card>
+                      </Box>
                     </Box>
                   ))
-                : activeAnnouncements.map((announcement, i) => (
-                    <Box key={announcement.id} sx={{ scrollSnapAlign: 'start', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
-                      <AnimatedSection delay={i * 100} sx={{ height: '100%' }}>
-                        <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                : infiniteAnnouncements.map((announcement, i) => (
+                    <Box key={`${announcement.id}-${i}`} sx={{ scrollSnapAlign: 'center', flex: '0 0 auto', width: { xs: '100%', sm: 'calc(50% - 16px)', md: 'calc(33.333% - 21.33px)' } }}>
+                      <AnimatedSection delay={0} sx={{ height: '100%' }}>
+                        <Box sx={{ maxWidth: { xs: '92%', sm: 'none' }, mx: 'auto', height: '100%' }}>
+                          <AnnouncementCard announcement={announcement} whatsappNumber={whatsappNumber} />
+                        </Box>
                       </AnimatedSection>
                     </Box>
                   ))}
