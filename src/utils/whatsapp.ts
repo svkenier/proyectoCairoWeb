@@ -79,13 +79,14 @@ export function getRescueUrl(phone: string, params: WhatsAppRescueParams = {}): 
  * o entrega responsable de un animal.
  */
 export function getDonationUrl(phone: string): string {
-  const message =
-    `¡Hola! Quisiera apoyar al refugio.\n\n` +
-    `Me gustaría obtener información sobre:\n` +
-    `- Apadrinamiento de mascotas\n` +
-    `- Entrega responsable de animales\n` +
-    `- Donaciones al refugio\n\n` +
-    `¿Cómo puedo colaborar?`;
+  const message = `¡Hola! Quisiera apoyar al refugio.
+
+Me gustaría recibir información sobre:
+- Apadrinamiento de mascotas
+- Donaciones al refugio
+- Entrega o rescate responsable de animales
+
+¿Cómo puedo colaborar?`;
 
   return buildWaUrl(phone, message);
 }
