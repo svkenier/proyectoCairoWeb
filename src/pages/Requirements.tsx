@@ -77,7 +77,7 @@ export default function Requirements() {
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: 'background.default', flexGrow: 1 }}>
+      <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: 'background.default', flexGrow: 1, contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Container maxWidth="md">
 
           {/* Requisitos */}

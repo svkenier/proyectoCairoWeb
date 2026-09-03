@@ -248,7 +248,7 @@ export default function Catalog() {
       </Box>
 
       {/* ── Grid de mascotas ──────────────────────────────────────────────────── */}
-      <Box sx={{ flexGrow: 1, py: { xs: 4, md: 6 }, bgcolor: 'background.default' }}>
+      <Box sx={{ flexGrow: 1, py: { xs: 4, md: 6 }, bgcolor: 'background.default', contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Container maxWidth="lg">
 
           {isError && (
