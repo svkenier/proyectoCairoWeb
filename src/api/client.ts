@@ -36,6 +36,13 @@ export const clearSession = (): void => {
   localStorage.removeItem('petrescue_user');
 };
 
+// ─── Caché ETag en memoria ───────────────────────────────────────────────────
+interface CacheEntry {
+  etag: string;
+  data: any;
+}
+const etagCache = new Map<string, CacheEntry>();
+
 // ─── Instancia de Axios ───────────────────────────────────────────────────────
 
 const apiClient: AxiosInstance = axios.create({
@@ -44,6 +51,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  validateStatus: (status) => (status >= 200 && status < 300) || status === 304,
 });
 
 // ─── Interceptor de REQUEST ───────────────────────────────────────────────────
@@ -56,6 +64,14 @@ apiClient.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Inyectar ETag si existe en caché para peticiones GET
+    if (config.method?.toLowerCase() === 'get' && config.url) {
+      const cached = etagCache.get(config.url);
+      if (cached && config.headers) {
+        config.headers['If-None-Match'] = cached.etag;
+      }
+    }
+
     return config;
   },
   (error: unknown) => Promise.reject(error),
@@ -64,8 +80,24 @@ apiClient.interceptors.request.use(
 // ─── Interceptor de RESPONSE ──────────────────────────────────────────────────
 
 apiClient.interceptors.response.use(
-  // Respuesta exitosa: pasar tal cual.
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    const url = response.config.url;
+    if (response.config.method?.toLowerCase() === 'get' && url) {
+      if (response.status === 304) {
+        const cached = etagCache.get(url);
+        if (cached) {
+          response.status = 200;
+          response.data = cached.data;
+        }
+      } else if (response.status === 200) {
+        const etag = response.headers['etag'] || response.headers['ETag'];
+        if (etag) {
+          etagCache.set(url, { etag, data: response.data });
+        }
+      }
+    }
+    return response;
+  },
 
   // Error: manejar 401 limpiando sesión y redirigiendo.
   (error: unknown) => {
