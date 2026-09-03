@@ -29,3 +29,5 @@ dist-ssr
 # Playwright Reports
 /playwright-report/
 /test-results/
+# Lighthouse Audits
+docs/audits/*.json
