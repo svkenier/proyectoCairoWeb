@@ -101,7 +101,7 @@ export default function Footer() {
           <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box component="img" src={logo} alt="Proyecto Cairo" sx={{ width: 32, height: 32, objectFit: 'contain' }} />
-              <Typography variant="h6" fontWeight={800} color="#FFFFFF">
+              <Typography variant="h6" component="h2" fontWeight={800} color="#FFFFFF">
                 Proyecto Cairo
               </Typography>
             </Box>

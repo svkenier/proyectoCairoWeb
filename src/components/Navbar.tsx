@@ -212,7 +212,7 @@ export default function Navbar() {
             variant="h6"
             fontWeight={800}
             color="primary"
-            aria-label="Ir a la página de inicio"
+            aria-label="Proyecto Cairo - Ir a la página de inicio"
             sx={{ textDecoration: 'none', flexGrow: { xs: 1, md: 0 }, mr: 4, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <Box component="img" src={logo} alt="Proyecto Cairo" sx={{ width: 32, height: 32, objectFit: 'contain' }} />

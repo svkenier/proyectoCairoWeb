@@ -168,7 +168,12 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           disabled={!whatsappNumber}
           aria-label={`Más Información sobre ${announcement.title}`}
         >
-          Más Información
+          <Typography component="span" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', textTransform: 'inherit' }}>
+            Más Información 
+            <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
+              sobre {announcement.title}
+            </Box>
+          </Typography>
         </Button>
       </CardActions>
     </Card>
@@ -243,7 +248,7 @@ export default function AnnouncementsSection() {
       <Container maxWidth="lg">
         <AnimatedSection>
           <Box sx={{ textAlign: 'center', mb: 5 }}>
-            <Typography variant="overline" color="warning" fontWeight={700} letterSpacing="0.12em">
+            <Typography variant="overline" color="#b45309" fontWeight={700} letterSpacing="0.12em">
               Próximos Eventos y Jornadas
             </Typography>
             <Typography variant="h3" component="h2" fontWeight={700} mt={0.5} mb={1.5}>
