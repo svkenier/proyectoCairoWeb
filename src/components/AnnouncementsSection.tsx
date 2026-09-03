@@ -98,7 +98,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         />
       </Box>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom lineHeight={1.2}>
+        <Typography variant="h6" component="h3" fontWeight={700} gutterBottom lineHeight={1.2}>
           {announcement.title}
         </Typography>
         
@@ -166,6 +166,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           startIcon={<WhatsAppIcon />}
           href={waUrl}
           disabled={!whatsappNumber}
+          aria-label={`Más información sobre ${announcement.title}`}
         >
           Más Información
         </Button>

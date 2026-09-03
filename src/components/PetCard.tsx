@@ -128,6 +128,7 @@ const PetCard = memo(function PetCard({ pet }: PetCardProps) {
         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
           <Typography
             variant="h6"
+            component="h3"
             fontWeight={700}
             gutterBottom
             sx={{ lineHeight: 1.3 }}
