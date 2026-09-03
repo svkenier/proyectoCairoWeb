@@ -50,11 +50,11 @@ const INITIAL_FILTERS: PetFilters = {
 
 export default function Catalog() {
   const [filters, setFilters] = useState<PetFilters>(INITIAL_FILTERS);
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   // Reset pagination on filter change
   useEffect(() => {
-    setVisibleCount(12);
+    setVisibleCount(8);
   }, [filters]);
 
   const { data, isLoading, isError, error, refetch } = useQuery<PetsIndex>({
@@ -315,7 +315,7 @@ export default function Catalog() {
               <Button
                 variant="outlined"
                 color="primary"
-                onClick={() => setVisibleCount((prev) => prev + 12)}
+                onClick={() => setVisibleCount((prev) => prev + 8)}
                 aria-label="Cargar más mascotas del catálogo"
                 sx={{ px: 4, py: 1, borderRadius: 2, fontWeight: 700 }}
               >

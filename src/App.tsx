@@ -17,7 +17,7 @@ import ScrollToTop from '@/components/ScrollToTop';
 
 // ─── Lazy-loading de páginas (code splitting automático por Vite) ──────────────
 import Home from '@/pages/Home';
-import Catalog from '@/pages/Catalog';
+const Catalog      = lazy(() => import('@/pages/Catalog'));
 const PetDetail    = lazy(() => import('@/pages/PetDetail'));
 const Requirements = lazy(() => import('@/pages/Requirements'));
 const Terms        = lazy(() => import('@/pages/Terms'));
