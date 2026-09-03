@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
 import { getFile, getFileWithETag, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath } from './_lib/github.js';
+import { publicRateLimit, checkRateLimit } from './_lib/rate-limit.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
 import type { Announcement, AnnouncementUpsertBody } from '../src/types/announcement.js';
 
@@ -10,6 +11,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET: Público (Retorna todos, pero en Home filtraremos por is_active)
   if (req.method === 'GET') {
     try {
+      // Rate limit — misma política que /api/public/pets
+      const ip = req.headers['x-forwarded-for'] as string ?? '127.0.0.1';
+      const limitRes = await checkRateLimit(publicRateLimit, ip);
+      res.setHeader('X-RateLimit-Limit', limitRes.limit);
+      res.setHeader('X-RateLimit-Remaining', limitRes.remaining);
+      if (!limitRes.success) {
+        return res.status(429).json({ error: 'Demasiadas peticiones. Intenta más tarde.' });
+      }
+
       const ifNoneMatch = req.headers['if-none-match'];
       const ghRes = await getFileWithETag(ANNOUNCEMENTS_JSON_PATH, ifNoneMatch);
 

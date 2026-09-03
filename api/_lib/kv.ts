@@ -25,6 +25,9 @@ export const redis = new Redis({
 });
 
 const userKey = (username: string) => `user:${username}`;
+/** Set global que registra todos los usernames (evita redis.keys O(N)). */
+const USER_INDEX = 'user:index';
+
 
 // ─── Operaciones CRUD de usuario ──────────────────────────────────────────────
 
@@ -43,11 +46,15 @@ export async function setUser(user: KVUser, ttl?: number): Promise<void> {
   } else {
     await redis.set(userKey(user.username), user);
   }
+  // Registrar username en el índice (SADD es idempotente).
+  await redis.sadd(USER_INDEX, user.username);
 }
 
 /** Elimina un usuario de KV. */
 export async function deleteUser(username: string): Promise<void> {
   await redis.del(userKey(username));
+  // Eliminar del índice al borrar el usuario.
+  await redis.srem(USER_INDEX, username);
 }
 
 /** 
@@ -87,13 +94,14 @@ export async function userExists(username: string): Promise<boolean> {
 
 /**
  * Lista todos los usuarios registrados.
+ * Usa el Set indexado (user:index) para evitar redis.keys O(N).
  * Excluye el campo `password_hash` de la respuesta.
  */
 export async function listUsers(): Promise<PublicUser[]> {
-  const keys = await redis.keys('user:*');
-  if (keys.length === 0) return [];
+  const usernames = await redis.smembers(USER_INDEX);
+  if (usernames.length === 0) return [];
 
-  const users = await Promise.all(keys.map((k) => redis.get<KVUser>(k)));
+  const users = await Promise.all(usernames.map((name) => redis.get<KVUser>(userKey(name))));
 
   return users
     .filter((u): u is KVUser => u !== null)

@@ -41,10 +41,9 @@ export const petExtraImageUrl = (id: string, n: number): string =>
 /**
  * URL del archivo JSON individual de una mascota en el CDN.
  * Se usa en PetDetail para carga directa sin depender del índice.
- * `?t=` fuerza bypass de caché de jsDelivr.
  */
 export const petDataUrl = (id: string): string =>
-  `${CDN_BASE}/data/${id}.json?t=${Date.now()}`;
+  `${CDN_BASE}/data/${id}.json`;
 
 /** Fallback visual cuando una imagen no carga (CDN unavailable o foto no subida aún). */
 export const PET_IMAGE_FALLBACK =
