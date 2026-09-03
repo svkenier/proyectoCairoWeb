@@ -187,7 +187,7 @@ const PetCard = memo(function PetCard({ pet }: PetCardProps) {
           {pet.descripcion && (
             <Typography
               variant="body2"
-              color="text.secondary"
+              color="#4A4A4A"
               sx={{
                 display:           '-webkit-box',
                 WebkitLineClamp:   2,

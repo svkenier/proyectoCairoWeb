@@ -105,7 +105,7 @@ export default function Footer() {
                 Proyecto Cairo
               </Typography>
             </Box>
-            <Typography variant="body2" color="#CBD5E1" lineHeight={1.8}>
+            <Typography variant="body2" color="#E2E8F0" lineHeight={1.8}>
               Somos un refugio benéfico dedicado a rescatar y dar en adopción a
               perros y gatos que merecen una segunda oportunidad. Operamos 100%
               con voluntarios y donaciones.
@@ -281,7 +281,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}>
-          <Typography variant="caption" color="rgba(255,255,255,0.40)">
+          <Typography variant="caption" color="rgba(255,255,255,0.70)">
             © {year} Proyecto Cairo · Todos los derechos reservados
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -291,7 +291,7 @@ export default function Footer() {
                 component={RouterLink}
                 to={l.to}
                 underline="hover"
-                sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', '&:hover': { color: 'primary.light' } }}
+                sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.75rem', '&:hover': { color: 'primary.light' } }}
               >
                 {l.label}
               </Link>

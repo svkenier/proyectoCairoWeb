@@ -255,7 +255,7 @@ export default function Home() {
               <Typography variant="h2" fontWeight={700} mt={0.5} mb={1.5}>
                 Mascotas en busca de hogar
               </Typography>
-              <Typography variant="body1" color="text.secondary" maxWidth={480} mx="auto">
+              <Typography variant="body1" color="#4A4A4A" maxWidth={480} mx="auto">
                 Cada uno tiene una historia. Encuentra a tu compañero ideal y
                 cambia su vida para siempre.
               </Typography>
@@ -374,7 +374,7 @@ export default function Home() {
                 <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
                   No hay mascotas registradas por el momento
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="#4A4A4A">
                   Pronto publicaremos nuevos peludos que buscan un hogar lleno de amor.
                 </Typography>
               </Box>
@@ -447,7 +447,7 @@ export default function Home() {
                     <Typography variant="h6" component="h3" fontWeight={700} gutterBottom>
                       {step.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" lineHeight={1.7}>
+                    <Typography variant="body2" color="#4A4A4A" lineHeight={1.7}>
                       {step.desc}
                     </Typography>
                   </Box>
@@ -469,7 +469,7 @@ export default function Home() {
               <Typography variant="h2" fontWeight={700} mt={0.5} mb={1.5}>
                 ¿Cómo podemos ayudarte?
               </Typography>
-              <Typography variant="body1" color="text.secondary" maxWidth={480} mx="auto">
+              <Typography variant="body1" color="#4A4A4A" maxWidth={480} mx="auto">
                 Toda nuestra comunicación es directa por WhatsApp.
                 Sin formularios, sin esperas.
               </Typography>

@@ -125,10 +125,10 @@ export default function ContactSection({ sx }: ContactSectionProps) {
                 >
                   {ch.icon}
                 </Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
+                <Typography variant="h6" component="h3" fontWeight={700} gutterBottom>
                   {ch.title}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" mb={3}>
+                <Typography variant="body2" color="#4A4A4A" mb={3}>
                   {ch.subtitle}
                 </Typography>
                 <Button

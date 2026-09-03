@@ -103,7 +103,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         </Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2, mt: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#4A4A4A' }}>
             <CalendarTodayIcon fontSize="small" />
             <Typography variant="body2">
               {announcement.type === 'perdida' 
@@ -114,14 +114,14 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           </Box>
           
           {announcement.type !== 'perdida' && announcement.time && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#4A4A4A' }}>
               <AccessTimeIcon fontSize="small" />
               <Typography variant="body2">{announcement.time}</Typography>
             </Box>
           )}
 
           {announcement.location && (
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, color: 'text.secondary' }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, color: '#4A4A4A' }}>
               <LocationOnIcon fontSize="small" sx={{ mt: 0.3 }} />
               <Typography variant="body2" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {announcement.type === 'perdida' ? `Última ubicación: ${announcement.location}` : announcement.location}
@@ -133,7 +133,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
         <Box>
           <Typography 
             variant="body2" 
-            color="text.secondary" 
+            color="#4A4A4A" 
             sx={!expanded ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : { whiteSpace: 'pre-line' }}
           >
             {announcement.description}
@@ -249,7 +249,7 @@ export default function AnnouncementsSection() {
             <Typography variant="h3" fontWeight={700} mt={0.5} mb={1.5}>
               ¡Participa y ayúdanos a ayudar!
             </Typography>
-            <Typography variant="body1" color="text.secondary" maxWidth={500} mx="auto">
+            <Typography variant="body1" color="#4A4A4A" maxWidth={500} mx="auto">
               Únete a nuestras actividades para seguir transformando las vidas de cientos de peluditos.
             </Typography>
           </Box>
@@ -268,7 +268,7 @@ export default function AnnouncementsSection() {
               <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
                 No hay eventos ni anuncios activos
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="#4A4A4A">
                 Mantente atento a nuestras próximas jornadas y actividades comunitarias.
               </Typography>
             </Card>
