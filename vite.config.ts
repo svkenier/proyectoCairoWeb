@@ -19,27 +19,8 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@mui/icons-material')) {
-              return 'mui-icons';
-            }
-            if (id.includes('@mui/material')) {
-              return 'mui-core';
-            }
-            if (id.includes('@emotion')) {
-              return 'emotion';
-            }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            return 'vendor';
-          }
-        }
-      }
-    }
+    // Permite que Vite y Rollup gestionen los chunks automáticamente para evitar dependencias circulares (ReferenceError)
+    chunkSizeWarningLimit: 600,
   }
 })
 
