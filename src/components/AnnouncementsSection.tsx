@@ -275,7 +275,7 @@ export default function AnnouncementsSection() {
         ) : (
           <Box sx={{ position: 'relative', px: { xs: 0, md: 6 } }}>
             {!isMobile && loopActive && (
-              <IconButton 
+              <IconButton aria-label="Acción" 
                 onClick={() => emblaApi && emblaApi.scrollPrev()}
                 sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
@@ -331,7 +331,7 @@ export default function AnnouncementsSection() {
             </Box>
 
             {!isMobile && loopActive && (
-              <IconButton 
+              <IconButton aria-label="Acción" 
                 onClick={() => emblaApi && emblaApi.scrollNext()}
                 sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >

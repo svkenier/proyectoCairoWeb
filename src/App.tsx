@@ -49,29 +49,31 @@ export default function App() {
     <AuthProvider>
       <Suspense fallback={<PageLoader />}>
         <ScrollToTop />
-        <Routes>
-          {/* Rutas públicas */}
-          <Route path="/"           element={<Home />} />
-          <Route path="/mascotas"   element={<Catalog />} />
-          <Route path="/mascotas/:id" element={<PetDetail />} />
-          <Route path="/requisitos" element={<Requirements />} />
-          <Route path="/terminos"   element={<Terms />} />
-          <Route path="/privacidad" element={<Privacy />} />
-          <Route path="/login"      element={<Login />} />
+        <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          <Routes>
+            {/* Rutas públicas */}
+            <Route path="/"           element={<Home />} />
+            <Route path="/mascotas"   element={<Catalog />} />
+            <Route path="/mascotas/:id" element={<PetDetail />} />
+            <Route path="/requisitos" element={<Requirements />} />
+            <Route path="/terminos"   element={<Terms />} />
+            <Route path="/privacidad" element={<Privacy />} />
+            <Route path="/login"      element={<Login />} />
 
-          {/* Ruta protegida — acceso mínimo: voluntario */}
-          <Route
-            path="/admin/*"
-            element={
-              <ProtectedRoute minRole="voluntario">
-                <Admin />
-              </ProtectedRoute>
-            }
-          />
+            {/* Ruta protegida — acceso mínimo: voluntario */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute minRole="voluntario">
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Catch-all → 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Catch-all → 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Box>
       </Suspense>
     </AuthProvider>
   );

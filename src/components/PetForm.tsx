@@ -164,7 +164,7 @@ function ImagePicker({ label, preview, onFile, onClear, size = 'large' }: ImageP
       />
       {preview && onClear && (
         <Tooltip title="Quitar foto">
-          <IconButton
+          <IconButton aria-label="Acción"
             size="small"
             onClick={onClear}
             sx={{
@@ -299,7 +299,7 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
         <Typography variant="h6" fontWeight={700}>
           {isEdit ? `Editar: ${initial?.nombre}` : 'Nueva mascota'}
         </Typography>
-        <IconButton onClick={onClose} size="small" disabled={mutation.isPending}>
+        <IconButton aria-label="Acción" onClick={onClose} size="small" disabled={mutation.isPending}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>

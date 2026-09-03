@@ -271,6 +271,7 @@ export default function Home() {
           <Box sx={{ position: 'relative', px: { xs: 0, md: 6 } }}>
             {isDesktop && loopActive && (
               <IconButton 
+                aria-label="Ver mascotas anteriores"
                 onClick={() => emblaApi && emblaApi.scrollPrev()}
                 sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
@@ -320,6 +321,7 @@ export default function Home() {
 
             {isDesktop && loopActive && (
               <IconButton 
+                aria-label="Ver mascotas siguientes"
                 onClick={() => emblaApi && emblaApi.scrollNext()}
                 sx={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
               >
@@ -442,7 +444,7 @@ export default function Home() {
                     >
                       {i + 1}
                     </Box>
-                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                    <Typography variant="h6" component="h3" fontWeight={700} gutterBottom>
                       {step.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" lineHeight={1.7}>

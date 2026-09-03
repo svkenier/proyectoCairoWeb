@@ -248,7 +248,7 @@ export default function Navbar() {
               {isAuthenticated && user ? (
                 <>
                   <Tooltip title={`${user.username} · ${user.role}`}>
-                    <IconButton onClick={handleOpenMenu} size="small" sx={{ ml: 1 }}>
+                    <IconButton aria-label="Acción" onClick={handleOpenMenu} size="small" sx={{ ml: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
                         {user.username.charAt(0).toUpperCase()}
                       </Avatar>

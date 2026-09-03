@@ -313,7 +313,7 @@ export default function PetDetail() {
                   </Button>
 
                   <Tooltip title="Copiar enlace">
-                    <IconButton
+                    <IconButton aria-label="Acción"
                       onClick={() => void handleShare()}
                       sx={{
                         border:     '1px solid',

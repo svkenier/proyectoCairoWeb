@@ -218,12 +218,12 @@ export default function AnnouncementsManager() {
                     </TableCell>
                     <TableCell align="right">
                       <Tooltip title="Editar">
-                        <IconButton size="small" color="primary" onClick={() => handleOpenForm(a)}>
+                        <IconButton aria-label="Acción" size="small" color="primary" onClick={() => handleOpenForm(a)}>
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Eliminar">
-                        <IconButton size="small" color="error" onClick={() => setDeleting(a)}>
+                        <IconButton aria-label="Acción" size="small" color="error" onClick={() => setDeleting(a)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

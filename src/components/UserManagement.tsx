@@ -248,7 +248,7 @@ function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
+                    <IconButton aria-label="Acción" onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
                       {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
@@ -557,7 +557,7 @@ export default function UserManagement() {
                             {actionStatus.canDelete && (
                               <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Eliminar usuario"}>
                                 <span>
-                                  <IconButton size="small" color="error" disabled={actionStatus.disabled} onClick={() => { setDeleteError(''); setDeleteTarget(u); }}>
+                                  <IconButton aria-label="Acción" size="small" color="error" disabled={actionStatus.disabled} onClick={() => { setDeleteError(''); setDeleteTarget(u); }}>
                                     <DeleteIcon fontSize="small" />
                                   </IconButton>
                                 </span>

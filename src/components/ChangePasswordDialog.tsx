@@ -116,7 +116,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCurrent(!showCurrent)} edge="end" size="small" tabIndex={-1}>
+                    <IconButton aria-label="Acción" onClick={() => setShowCurrent(!showCurrent)} edge="end" size="small" tabIndex={-1}>
                       {showCurrent ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
@@ -137,7 +137,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowNew(!showNew)} edge="end" size="small" tabIndex={-1}>
+                    <IconButton aria-label="Acción" onClick={() => setShowNew(!showNew)} edge="end" size="small" tabIndex={-1}>
                       {showNew ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
@@ -158,7 +158,7 @@ export default function ChangePasswordDialog({ open, onClose }: ChangePasswordDi
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowConfirm(!showConfirm)} edge="end" size="small" tabIndex={-1}>
+                    <IconButton aria-label="Acción" onClick={() => setShowConfirm(!showConfirm)} edge="end" size="small" tabIndex={-1}>
                       {showConfirm ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>

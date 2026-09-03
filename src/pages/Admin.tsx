@@ -138,7 +138,7 @@ export default function Admin() {
         {/* Header Admin */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
           {/* Hamburger Menu solo en móvil */}
-          <IconButton 
+          <IconButton aria-label="Acción" 
             onClick={() => setDrawerOpen(true)} 
             sx={{ display: { xs: 'block', md: 'none' }, color: 'primary.main' }}
           >
@@ -344,17 +344,17 @@ export default function Admin() {
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Ver ficha pública">
-                            <IconButton size="small" href={`/mascotas/${pet.id}`} target="_blank" rel="noopener noreferrer">
+                            <IconButton aria-label="Acción" size="small" href={`/mascotas/${pet.id}`} target="_blank" rel="noopener noreferrer">
                               <OpenInNewIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Editar mascota">
-                            <IconButton size="small" color="primary" onClick={() => handleOpenEdit(pet)}>
+                            <IconButton aria-label="Acción" size="small" color="primary" onClick={() => handleOpenEdit(pet)}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Eliminar mascota">
-                            <IconButton size="small" color="error" onClick={() => setPetToDelete(pet)}>
+                            <IconButton aria-label="Acción" size="small" color="error" onClick={() => setPetToDelete(pet)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
