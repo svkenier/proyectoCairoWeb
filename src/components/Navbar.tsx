@@ -100,7 +100,7 @@ export default function Navbar() {
           <Box component="img" src={logo} alt="Proyecto Cairo" sx={{ width: 28, height: 28, objectFit: 'contain' }} />
           Proyecto Cairo
         </Typography>
-        <IconButton onClick={() => setDrawerOpen(false)} size="small">
+        <IconButton onClick={() => setDrawerOpen(false)} size="small" aria-label="Cerrar menú">
           <CloseIcon />
         </IconButton>
       </Box>
@@ -248,7 +248,7 @@ export default function Navbar() {
               {isAuthenticated && user ? (
                 <>
                   <Tooltip title={`${user.username} · ${user.role}`}>
-                    <IconButton aria-label="Acción" onClick={handleOpenMenu} size="small" sx={{ ml: 1 }}>
+                    <IconButton aria-label="Abrir menú de usuario" onClick={handleOpenMenu} size="small" sx={{ ml: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
                         {user.username.charAt(0).toUpperCase()}
                       </Avatar>

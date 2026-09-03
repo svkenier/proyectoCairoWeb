@@ -15,8 +15,10 @@ export default function SEO({
   url, 
   type = 'website' 
 }: SEOProps) {
-  const baseUrl = import.meta.env.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://proyecto-cairo.vercel.app');
-  const finalUrl = url || baseUrl;
+  let baseUrl = import.meta.env.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://proyecto-cairo.vercel.app');
+  // Limpiar posible formato Markdown accidental como "[https://...](https://...)"
+  baseUrl = baseUrl.replace(/^\[.*\]\((.*)\)$/, '$1');
+  const finalUrl = url ? (url.startsWith('http') ? url : `${baseUrl}${url}`) : baseUrl;
 
   const fullTitle = title.includes('Proyecto Cairo') ? title : `${title} | Proyecto Cairo`;
 

@@ -148,7 +148,7 @@ export default function Footer() {
                   href={`https://wa.me/${config.whatsapp.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="WhatsApp"
+                  aria-label="Contactar por WhatsApp"
                   sx={{ bgcolor: '#1E293B', color: '#E2E8F0', borderRadius: 0, transition: 'all 0.2s ease-in-out', '&:hover': { bgcolor: '#25D366', color: '#FFFFFF' } }}
                 >
                   <WhatsAppIcon />
@@ -159,7 +159,7 @@ export default function Footer() {
                   href={config.social_links.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Facebook"
+                  aria-label="Visitar nuestro perfil de Facebook"
                   sx={{ bgcolor: '#1E293B', color: '#E2E8F0', borderRadius: 0, transition: 'all 0.2s ease-in-out', '&:hover': { bgcolor: '#1877F2', color: '#FFFFFF' } }}
                 >
                   <FacebookIcon />
@@ -170,7 +170,7 @@ export default function Footer() {
                   href={config.social_links.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Instagram"
+                  aria-label="Visitar nuestro perfil de Instagram"
                   sx={{ bgcolor: '#1E293B', color: '#E2E8F0', borderRadius: 0, transition: 'all 0.2s ease-in-out', '&:hover': { background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color: '#FFFFFF' } }}
                 >
                   <InstagramIcon />
@@ -181,7 +181,7 @@ export default function Footer() {
                   href={config.social_links.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Twitter / X"
+                  aria-label="Visitar nuestro perfil de Twitter / X"
                   sx={{ bgcolor: '#1E293B', color: '#E2E8F0', borderRadius: 0, transition: 'all 0.2s ease-in-out', '&:hover': { bgcolor: '#FFFFFF', color: '#000000' } }}
                 >
                   <TwitterIcon />
