@@ -16,8 +16,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ScrollToTop from '@/components/ScrollToTop';
 
 // ─── Lazy-loading de páginas (code splitting automático por Vite) ──────────────
-const Home         = lazy(() => import('@/pages/Home'));
-const Catalog      = lazy(() => import('@/pages/Catalog'));
+import Home from '@/pages/Home';
+import Catalog from '@/pages/Catalog';
 const PetDetail    = lazy(() => import('@/pages/PetDetail'));
 const Requirements = lazy(() => import('@/pages/Requirements'));
 const Terms        = lazy(() => import('@/pages/Terms'));

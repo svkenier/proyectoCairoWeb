@@ -254,19 +254,24 @@ export default PetCard;
 
 export function PetCardSkeleton() {
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Skeleton variant="rectangular" sx={{ aspectRatio: '4/3', width: '100%', height: 'auto' }} />
-      <CardContent sx={{ minHeight: 170 }}>
-        <Skeleton variant="text" width="60%" height={28} />
-        <Box sx={{ display: 'flex', gap: 0.6, my: 1 }}>
+      <CardContent sx={{ flexGrow: 1, pb: 1, minHeight: 170 }}>
+        <Typography variant="h6" gutterBottom sx={{ minHeight: '2.6em' }}>
+          <Skeleton />
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mb: 1 }}>
           <Skeleton variant="rounded" width={70} height={24} />
           <Skeleton variant="rounded" width={60} height={24} />
+          <Skeleton variant="rounded" width={80} height={24} />
         </Box>
-        <Skeleton variant="text" />
-        <Skeleton variant="text" width="80%" />
+        <Typography variant="body2" sx={{ minHeight: '3em' }}>
+          <Skeleton />
+          <Skeleton width="80%" />
+        </Typography>
       </CardContent>
-      <CardActions sx={{ px: 2, pb: 2 }}>
-        <Skeleton variant="rounded" width="100%" height={34} />
+      <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+        <Skeleton variant="rounded" width="100%" height={30.75} />
       </CardActions>
     </Card>
   );
