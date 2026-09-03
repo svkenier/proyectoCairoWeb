@@ -244,7 +244,7 @@ export default function AnnouncementsSection() {
   const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
   return (
-    <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+    <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC', contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
       <Container maxWidth="lg">
         <AnimatedSection>
           <Box sx={{ textAlign: 'center', mb: 5 }}>

@@ -258,7 +258,7 @@ export default function Home() {
 
       {/* ── Mascotas en busca de hogar ───────────────────────────────────────── */}
 
-      <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
+      <Box component="section" sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default', contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
         <Container maxWidth="lg">
           <AnimatedSection>
             <Box sx={{ textAlign: 'center', mb: 5 }}>
