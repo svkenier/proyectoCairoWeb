@@ -83,7 +83,8 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
               (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK;
             }}
             sx={{
-              height:     220,
+              aspectRatio: '4/3',
+              width:      '100%',
               objectFit:  'cover',
               bgcolor:    'grey.100',
             }}
@@ -129,13 +130,20 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
         </Box>
 
         {/* Contenido */}
-        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+        <CardContent sx={{ flexGrow: 1, pb: 1, minHeight: 170 }}>
           <Typography
             variant="h6"
             component="h3"
             fontWeight={700}
             gutterBottom
-            sx={{ lineHeight: 1.3 }}
+            sx={{
+              lineHeight: 1.3,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: '2.6em', // Reserva espacio para 2 líneas y evita saltos de fuente
+            }}
           >
             {pet.nombre}
           </Typography>
@@ -188,21 +196,20 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
           </Box>
 
           {/* Descripción truncada */}
-          {pet.descripcion && (
-            <Typography
-              variant="body2"
-              color="#4A4A4A"
-              sx={{
-                display:           '-webkit-box',
-                WebkitLineClamp:   2,
-                WebkitBoxOrient:   'vertical',
-                overflow:          'hidden',
-                lineHeight:        1.5,
-              }}
-            >
-              {pet.descripcion}
-            </Typography>
-          )}
+          <Typography
+            variant="body2"
+            color="#4A4A4A"
+            sx={{
+              display:           '-webkit-box',
+              WebkitLineClamp:   2,
+              WebkitBoxOrient:   'vertical',
+              overflow:          'hidden',
+              lineHeight:        1.5,
+              minHeight:         '3em', // Reserva espacio exacto para 2 líneas
+            }}
+          >
+            {pet.descripcion || 'Sin descripción disponible.'}
+          </Typography>
         </CardContent>
       </CardActionArea>
 
@@ -230,8 +237,8 @@ export default PetCard;
 export function PetCardSkeleton() {
   return (
     <Card sx={{ height: '100%' }}>
-      <Skeleton variant="rectangular" height={220} />
-      <CardContent>
+      <Skeleton variant="rectangular" sx={{ aspectRatio: '4/3', width: '100%', height: 'auto' }} />
+      <CardContent sx={{ minHeight: 170 }}>
         <Skeleton variant="text" width="60%" height={28} />
         <Box sx={{ display: 'flex', gap: 0.6, my: 1 }}>
           <Skeleton variant="rounded" width={70} height={24} />
