@@ -19,8 +19,14 @@ export default defineConfig({
     },
   },
   build: {
-    // Permite que Vite y Rollup gestionen los chunks automáticamente para evitar dependencias circulares (ReferenceError)
     chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled']
+        }
+      }
+    }
   }
 })
 
