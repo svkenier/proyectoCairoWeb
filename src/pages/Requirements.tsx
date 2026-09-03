@@ -22,7 +22,7 @@ import Navbar                 from '@/components/Navbar';
 import Footer                 from '@/components/Footer';
 import AnimatedSection        from '@/components/AnimatedSection';
 import SEO                    from '@/components/SEO';
-import { getAdoptionUrl, openWhatsApp } from '@/utils/whatsapp';
+import { getGenericAdoptionUrl, openWhatsApp } from '@/utils/whatsapp';
 
 const REQUISITOS = [
   'Ser mayor de 18 años.',
@@ -184,7 +184,7 @@ export default function Requirements() {
                 variant="contained"
                 size="large"
                 startIcon={<WhatsAppIcon />}
-                onClick={() => openWhatsApp(getAdoptionUrl('+584141234567', { nombre: 'una mascota', id: 'general' }))}
+                onClick={() => openWhatsApp(getGenericAdoptionUrl('+584141234567'))}
                 sx={{ borderRadius: 0, px: 4, py: 1.3 }}
               >
                 Iniciar adopción
