@@ -43,6 +43,24 @@ const SIZE_LABEL: Record<string, string> = {
   grande:  'Grande',
 };
 
+// ─── Utilidad de Optimización de Imágenes ─────────────────────────────────────
+
+/**
+ * Pasa las URLs de imágenes por Weserv para redimensionar dinámicamente y forzar WebP.
+ * Evita la descarga de imágenes originales gigantes en el cliente.
+ */
+function getOptimizedImageUrl(url: string | undefined, width = 400): string {
+  if (!url) return PET_IMAGE_FALLBACK;
+  if (url.includes('images.weserv.nl')) return url;
+  
+  // Evitar proxy para fallbacks locales o data URIs
+  if (url.startsWith('/') || url.startsWith('data:')) return url;
+  
+  // Codificar la URL original
+  const encodedUrl = encodeURIComponent(url);
+  return `https://images.weserv.nl/?url=${encodedUrl}&w=${width}&fit=cover&output=webp`;
+}
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 interface PetCardProps {
@@ -77,7 +95,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
             loading={loading}
             fetchPriority={loading === 'eager' ? 'high' : 'auto'}
             decoding="async"
-            image={pet.imagen_principal || PET_IMAGE_FALLBACK}
+            image={getOptimizedImageUrl(pet.imagen_principal)}
             alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK;
