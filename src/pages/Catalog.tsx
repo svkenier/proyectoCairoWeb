@@ -100,7 +100,8 @@ export default function Catalog() {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SEO 
         title="Catálogo de Mascotas" 
-        description="Explora nuestro catálogo de perros y gatos rescatados. Filtra por especie, tamaño y estado para encontrar a tu compañero ideal." 
+        description="Explora nuestro catálogo de perros y gatos rescatados. Filtra por especie, tamaño y estado para encontrar a tu compañero ideal."
+        url="/mascotas"
       />
       <Navbar />
 

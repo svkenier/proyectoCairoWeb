@@ -52,7 +52,8 @@ export default function Requirements() {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SEO 
         title="Requisitos de Adopción" 
-        description="Conoce los requisitos y el proceso paso a paso para adoptar una mascota en nuestro refugio. Queremos garantizar su bienestar." 
+        description="Conoce los requisitos y el proceso paso a paso para adoptar una mascota en nuestro refugio. Queremos garantizar su bienestar."
+        url="/requisitos"
       />
       <Navbar />
 
