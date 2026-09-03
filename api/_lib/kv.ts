@@ -98,7 +98,21 @@ export async function userExists(username: string): Promise<boolean> {
  * Excluye el campo `password_hash` de la respuesta.
  */
 export async function listUsers(): Promise<PublicUser[]> {
-  const usernames = await redis.smembers(USER_INDEX);
+  let usernames = await redis.smembers(USER_INDEX);
+  
+  if (usernames.length === 0) {
+    // Rescate: auto-poblado si el índice está vacío (evita que se pierdan usuarios existentes)
+    const allKeys = await redis.keys('user:*');
+    usernames = allKeys
+      .filter((k) => k !== USER_INDEX && !k.startsWith('user:rate-limit'))
+      .map((k) => k.replace(/^user:/, ''));
+      
+    if (usernames.length > 0) {
+      const [first, ...rest] = usernames;
+      await redis.sadd(USER_INDEX, first, ...rest);
+    }
+  }
+
   if (usernames.length === 0) return [];
 
   const users = await Promise.all(usernames.map((name) => redis.get<KVUser>(userKey(name))));
