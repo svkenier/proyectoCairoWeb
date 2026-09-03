@@ -83,7 +83,7 @@ export default function Requirements() {
 
           {/* Requisitos */}
           <AnimatedSection>
-            <Typography variant="h4" fontWeight={700} mb={3}>
+            <Typography variant="h4" component="h3" fontWeight={700} mb={3}>
               ✅ Requisitos básicos
             </Typography>
           </AnimatedSection>
@@ -107,7 +107,7 @@ export default function Requirements() {
 
           {/* Restricciones */}
           <AnimatedSection delay={80}>
-            <Typography variant="h4" fontWeight={700} mb={3}>
+            <Typography variant="h4" component="h3" fontWeight={700} mb={3}>
               🚫 Restricciones
             </Typography>
           </AnimatedSection>
@@ -133,7 +133,7 @@ export default function Requirements() {
 
           {/* Proceso */}
           <AnimatedSection>
-            <Typography variant="h4" fontWeight={700} mb={3}>
+            <Typography variant="h4" component="h3" fontWeight={700} mb={3}>
               📋 El proceso paso a paso
             </Typography>
           </AnimatedSection>
@@ -146,14 +146,15 @@ export default function Requirements() {
                     <CardContent sx={{ p: 3 }}>
                       <Typography
                         variant="h4"
+                        component="span"
                         fontWeight={800}
                         color="primary.main"
                         mb={1}
-                        sx={{ opacity: 0.5, fontSize: '2rem' }}
+                        sx={{ opacity: 0.5, fontSize: '2rem', display: 'block' }}
                       >
                         {paso.n}
                       </Typography>
-                      <Typography variant="h6" fontWeight={700} gutterBottom>{paso.title}</Typography>
+                      <Typography variant="h6" component="h4" fontWeight={700} gutterBottom>{paso.title}</Typography>
                       <Typography variant="body2" color="text.secondary">{paso.desc}</Typography>
                     </CardContent>
                   </Card>
