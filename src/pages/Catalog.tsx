@@ -8,7 +8,7 @@
  * Datos: TanStack Query → CDN jsDelivr (público, sin auth).
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useDeferredValue, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -50,6 +50,12 @@ const INITIAL_FILTERS: PetFilters = {
 
 export default function Catalog() {
   const [filters, setFilters] = useState<PetFilters>(INITIAL_FILTERS);
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [filters]);
 
   const { data, isLoading, isError, error, refetch } = useQuery<PetsIndex>({
     queryKey: ['pets-index'],
@@ -80,6 +86,9 @@ export default function Catalog() {
       return true;
     });
   }, [data, filters]);
+
+  const deferredFiltered = useDeferredValue(filtered);
+  const visiblePets = deferredFiltered.slice(0, visibleCount);
 
   const hasActiveFilters = Object.values(filters).some((v) => v !== '');
   const clearFilters     = () => setFilters(INITIAL_FILTERS);
@@ -230,7 +239,7 @@ export default function Catalog() {
           {!isLoading && data && (
             <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" color="text.secondary">
-                {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+                {deferredFiltered.length} resultado{deferredFiltered.length !== 1 ? 's' : ''}
               </Typography>
               {hasActiveFilters && (
                 <Chip
@@ -250,6 +259,14 @@ export default function Catalog() {
       {/* ── Grid de mascotas ──────────────────────────────────────────────────── */}
       <Box sx={{ flexGrow: 1, py: { xs: 4, md: 6 }, bgcolor: 'background.default', contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Container maxWidth="lg">
+          <style>
+            {`
+              @keyframes catalogFadeInUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}
+          </style>
 
           {isError && (
             <Alert
@@ -268,17 +285,46 @@ export default function Catalog() {
                     <PetCardSkeleton />
                   </Grid>
                 ))
-              : filtered?.map((pet, i) => (
-                  <Grid key={pet?.id || i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <AnimatedSection delay={Math.min(i * 40, 320)}>
-                      {pet ? <PetCard pet={pet} /> : null}
-                    </AnimatedSection>
-                  </Grid>
-                ))}
+              : visiblePets?.map((pet, i) => {
+                  const isInitialStatic = i < 6;
+                  return (
+                    <Grid key={pet?.id || i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                      <Box
+                        sx={
+                          isInitialStatic
+                            ? {}
+                            : {
+                                opacity: 0,
+                                animation: 'catalogFadeInUp 0.5s ease forwards',
+                                animationDelay: `${Math.min((i - 6) * 40, 320)}ms`,
+                                willChange: 'opacity, transform',
+                              }
+                        }
+                      >
+                        {pet ? <PetCard pet={pet} loading={isInitialStatic ? 'eager' : 'lazy'} /> : null}
+                      </Box>
+                    </Grid>
+                  );
+                })}
           </Grid>
 
+          {/* Botón Cargar Más */}
+          {!isLoading && !isError && visibleCount < deferredFiltered.length && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setVisibleCount((prev) => prev + 12)}
+                aria-label="Cargar más mascotas del catálogo"
+                sx={{ px: 4, py: 1, borderRadius: 2, fontWeight: 700 }}
+              >
+                Cargar más mascotas
+              </Button>
+            </Box>
+          )}
+
           {/* Estado vacío */}
-          {!isLoading && !isError && filtered.length === 0 && (
+          {!isLoading && !isError && deferredFiltered.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 10 }}>
               <PetsIcon sx={{ fontSize: '4rem', color: 'text.disabled', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>

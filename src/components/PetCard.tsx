@@ -47,9 +47,11 @@ const SIZE_LABEL: Record<string, string> = {
 
 interface PetCardProps {
   pet: Pet;
+  /** Estrategia de carga de la imagen. Prioridad alta ('eager') para LCP. */
+  loading?: 'lazy' | 'eager';
 }
 
-const PetCard = memo(function PetCard({ pet }: PetCardProps) {
+const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
   const navigate = useNavigate();
   const status   = STATUS_CONFIG[pet.estado] ?? STATUS_CONFIG.disponible;
   const isAdopted = pet.estado === 'adoptado';
@@ -72,7 +74,8 @@ const PetCard = memo(function PetCard({ pet }: PetCardProps) {
         <Box sx={{ position: 'relative' }}>
           <CardMedia
             component="img"
-            loading="lazy"
+            loading={loading}
+            fetchPriority={loading === 'eager' ? 'high' : 'auto'}
             decoding="async"
             image={pet.imagen_principal || PET_IMAGE_FALLBACK}
             alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
