@@ -166,7 +166,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           startIcon={<WhatsAppIcon />}
           href={waUrl}
           disabled={!whatsappNumber}
-          aria-label={`Más información sobre ${announcement.title}`}
+          aria-label={`Más Información sobre ${announcement.title}`}
         >
           Más Información
         </Button>
@@ -246,7 +246,7 @@ export default function AnnouncementsSection() {
             <Typography variant="overline" color="warning" fontWeight={700} letterSpacing="0.12em">
               Próximos Eventos y Jornadas
             </Typography>
-            <Typography variant="h3" fontWeight={700} mt={0.5} mb={1.5}>
+            <Typography variant="h3" component="h2" fontWeight={700} mt={0.5} mb={1.5}>
               ¡Participa y ayúdanos a ayudar!
             </Typography>
             <Typography variant="body1" color="#4A4A4A" maxWidth={500} mx="auto">
@@ -265,7 +265,7 @@ export default function AnnouncementsSection() {
           <AnimatedSection>
             <Card elevation={0} sx={{ bgcolor: 'transparent', textAlign: 'center', py: 8 }}>
               <CampaignIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
+              <Typography variant="h6" component="h3" color="text.primary" fontWeight={600} gutterBottom>
                 No hay eventos ni anuncios activos
               </Typography>
               <Typography variant="body2" color="#4A4A4A">

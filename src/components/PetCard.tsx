@@ -73,6 +73,7 @@ const PetCard = memo(function PetCard({ pet }: PetCardProps) {
           <CardMedia
             component="img"
             loading="lazy"
+            decoding="async"
             image={pet.imagen_principal || PET_IMAGE_FALLBACK}
             alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
             onError={(e) => {

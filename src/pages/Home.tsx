@@ -136,12 +136,6 @@ export default function Home() {
           minHeight: { xs: '75vh', md: '80vh' },
           display: 'flex',
           alignItems: 'center',
-          backgroundImage: {
-            xs: "url('/hero-mobile.webp')",
-            md: "url('/hero-desktop.webp')"
-          },
-          backgroundSize: 'cover',
-          backgroundPosition: { xs: 'right bottom', md: 'center right' },
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -157,6 +151,25 @@ export default function Home() {
           },
         }}
       >
+        <Box
+          component="img"
+          src="/hero-desktop.webp"
+          srcSet="/hero-mobile.webp 768w, /hero-desktop.webp 1200w"
+          sizes="(max-width: 768px) 100vw, 100vw"
+          fetchPriority="high"
+          loading="eager"
+          alt="Refugio de mascotas Cairo"
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: { xs: 'right bottom', md: 'center right' },
+            zIndex: 0,
+          }}
+        />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <Box sx={{ maxWidth: { xs: '75%', sm: '65%', md: '750px' } }}>
             <AnimatedSection>
@@ -371,7 +384,7 @@ export default function Home() {
             <AnimatedSection>
               <Box component={Card} elevation={0} sx={{ bgcolor: 'transparent', textAlign: 'center', py: 8 }}>
                 <PetsIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
+                <Typography variant="h6" component="h3" color="text.primary" fontWeight={600} gutterBottom>
                   No hay mascotas registradas por el momento
                 </Typography>
                 <Typography variant="body2" color="#4A4A4A">
