@@ -151,19 +151,41 @@ export default function Home() {
           },
         }}
       >
-        <img
+        <Box
+          component="img"
           src="/hero-mobile.webp"
           fetchPriority="high"
           loading="eager"
           alt="Refugio de mascotas Cairo"
-          className="block md:hidden absolute top-0 left-0 w-full h-full object-cover object-right-bottom z-0"
+          sx={{ 
+            display: { xs: 'block', md: 'none' }, 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'cover',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 0,
+            objectPosition: 'right bottom'
+          }}
         />
-        <img
+        <Box
+          component="img"
           src="/hero-desktop.webp"
           fetchPriority="high"
           loading="eager"
           alt="Refugio de mascotas Cairo"
-          className="hidden md:block absolute top-0 left-0 w-full h-full object-cover object-right z-0"
+          sx={{ 
+            display: { xs: 'none', md: 'block' }, 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'cover',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 0,
+            objectPosition: 'center right'
+          }}
         />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <Box sx={{ maxWidth: { xs: '75%', sm: '65%', md: '750px' } }}>
