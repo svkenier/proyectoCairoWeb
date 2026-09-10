@@ -168,7 +168,7 @@ function AnnouncementCard({ announcement, whatsappNumber }: { announcement: Anno
           disabled={!whatsappNumber}
           aria-label={`Más Información sobre ${announcement.title}`}
         >
-          <Typography component="span" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', textTransform: 'inherit' }}>
+          <Typography component="span" className="text-white" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit', textTransform: 'inherit' }}>
             Más Información 
             <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
               sobre {announcement.title}
