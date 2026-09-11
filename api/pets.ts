@@ -103,7 +103,7 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
       `${isUpdate ? 'Update' : 'Add'} main image for ${petId}`,
       existingImg?.sha,
     );
-    imagenPrincipalUrl = cdnImageUrl(imgPath);
+    imagenPrincipalUrl = `${cdnImageUrl(imgPath)}?v=${Date.now()}`;
   }
 
   // ── 3. Subir fotos secundarias nuevas ──────────────────────────────────────
@@ -120,7 +120,7 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
         `Add extra image ${i + 1} for ${petId}`,
         existingImg?.sha,
       );
-      newSecondaryUrls.push(cdnImageUrl(imgPath));
+      newSecondaryUrls.push(`${cdnImageUrl(imgPath)}?v=${Date.now()}`);
     }
   }
 

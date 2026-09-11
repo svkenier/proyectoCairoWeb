@@ -97,7 +97,7 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
         `${isUpdate ? 'Update' : 'Add'} announcement image for ${id}`,
         existingImg?.sha
       );
-      finalImageUrl = cdnImageUrl(imgPath);
+      finalImageUrl = `${cdnImageUrl(imgPath)}?v=${Date.now()}`;
     } else if (isUpdate && !finalImageUrl) {
       // El usuario eliminó la imagen existente
       try {
