@@ -40,15 +40,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. Buscar usuario en KV
   const user = await getUser(normalizedUsername);
 
-  if (!user) {
-    // Respuesta idéntica para no revelar si el usuario existe
-    return res.status(401).json({ error: 'Credenciales inválidas' });
-  }
+  // Parche contra timing attacks: usar hash dummy si no existe
+  const DUMMY_HASH = '$2b$10$cbhCMp9hbhUxNBFHYOmAM.HJJrdfilDQvl44G.cpMOg1g3nZJcFvy';
+  const hashToCompare = user ? user.password_hash : DUMMY_HASH;
 
   // 2. Verificar contraseña
-  const passwordOk = await bcrypt.compare(password, user.password_hash);
+  const passwordOk = await bcrypt.compare(password, hashToCompare);
 
-  if (!passwordOk) {
+  if (!user || !passwordOk) {
     return res.status(401).json({ error: 'Credenciales inválidas' });
   }
 
