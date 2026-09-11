@@ -152,41 +152,29 @@ export default function Home() {
         }}
       >
         <Box
-          component="img"
-          src="/hero-mobile.webp"
-          fetchPriority="high"
-          loading="eager"
-          alt="Refugio de mascotas Cairo"
-          sx={{ 
-            display: { xs: 'block', md: 'none' }, 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
+          component="picture"
+          sx={{
+            width: '100%',
+            height: '100%',
             position: 'absolute',
             top: 0,
             left: 0,
             zIndex: 0,
-            objectPosition: 'right bottom'
+            '& img': {
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: { xs: 'right bottom', md: 'center right' }
+            }
           }}
-        />
-        <Box
-          component="img"
-          src="/hero-desktop.webp"
-          fetchPriority="high"
-          loading="eager"
-          alt="Refugio de mascotas Cairo"
-          sx={{ 
-            display: { xs: 'none', md: 'block' }, 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 0,
-            objectPosition: 'center right'
-          }}
-        />
+        >
+          <source media="(min-width: 900px)" srcSet="/hero-desktop.webp" />
+          <img
+            src="/hero-mobile.webp"
+            alt="Refugio de mascotas Cairo"
+            fetchPriority="high"
+          />
+        </Box>
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <Box sx={{ maxWidth: { xs: '75%', sm: '65%', md: '750px' } }}>
             <AnimatedSection>
