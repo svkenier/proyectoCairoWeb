@@ -11,7 +11,7 @@
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const MAX_WIDTH_PX   = 1200;
+const MAX_WIDTH_PX   = 700;
 const WEBP_QUALITY   = 0.80; // 0.75 – 0.85 según reglas
 const OUTPUT_FORMAT  = 'image/webp' as const;
 

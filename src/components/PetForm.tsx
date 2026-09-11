@@ -78,8 +78,8 @@ const validationSchema = Yup.object({
 // ─── Helpers de imagen ────────────────────────────────────────────────────────
 
 async function fileToBase64(file: File): Promise<string> {
-  // Optimizar a WebP primero
-  const result = await optimizeImage(file, 0.82, 1200);
+  // Optimizar a WebP primero (usará los defaults: 700px, 80%)
+  const result = await optimizeImage(file);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload  = () => {
@@ -93,7 +93,7 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 async function fileToPreview(file: File): Promise<string> {
-  const result = await optimizeImage(file, 0.75, 600);
+  const result = await optimizeImage(file);
   return URL.createObjectURL(result.blob);
 }
 
