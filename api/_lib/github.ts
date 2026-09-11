@@ -198,3 +198,14 @@ function isBase64(str: string): boolean {
 export function generatePetId(): string {
   return `pet-${Date.now()}`;
 }
+
+/** Extrae la ruta relativa (e.g. images/pets/pet-123.webp) desde una URL completa del CDN. */
+export function extractPathFromCdnUrl(url: string): string | null {
+  const prefix = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@${GITHUB_BRANCH}/`;
+  if (url.startsWith(prefix)) {
+    let path = url.substring(prefix.length);
+    if (path.includes('?')) path = path.split('?')[0]; // Limpiar query params si los hubiera
+    return path;
+  }
+  return null;
+}

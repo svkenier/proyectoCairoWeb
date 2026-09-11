@@ -15,8 +15,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
 import {
   getFile, putFile, deleteFile,
-  PETS_JSON_PATH, petJsonPath, petMainImgPath, petExtraImgPath,
-  cdnImageUrl, generatePetId,
+  PETS_JSON_PATH, petJsonPath, petMainImgPath,
+  cdnImageUrl, generatePetId, extractPathFromCdnUrl,
 } from './_lib/github.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
 import type { Pet } from '../src/types/pet.js';
@@ -95,15 +95,28 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
   let imagenPrincipalUrl = existingPet?.imagen_principal ?? '';
 
   if (body.imagen_principal_base64) {
-    const imgPath = petMainImgPath(petId);
-    const existingImg = await getFile(imgPath);
+    const ts = Date.now();
+    const newImgPath = `images/pets/${petId}-${ts}.webp`;
+    
+    // Si ya existe una imagen principal previa, la eliminamos para no dejar basura
+    if (existingPet?.imagen_principal) {
+      const oldPath = extractPathFromCdnUrl(existingPet.imagen_principal);
+      if (oldPath) {
+        try {
+          const oldFile = await getFile(oldPath);
+          if (oldFile) await deleteFile(oldPath, oldFile.sha, `Remove old main image for ${petId}`);
+        } catch (e) {
+          console.warn('No se pudo borrar imagen antigua', oldPath, e);
+        }
+      }
+    }
+
     await putFile(
-      imgPath,
+      newImgPath,
       body.imagen_principal_base64,
       `${isUpdate ? 'Update' : 'Add'} main image for ${petId}`,
-      existingImg?.sha,
     );
-    imagenPrincipalUrl = `${cdnImageUrl(imgPath)}?v=${Date.now()}`;
+    imagenPrincipalUrl = cdnImageUrl(newImgPath);
   }
 
   // ── 3. Subir fotos secundarias nuevas ──────────────────────────────────────
@@ -111,16 +124,33 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
   const newSecondaryUrls: string[] = [];
 
   if (body.fotos_secundarias_base64?.length) {
+    const ts = Date.now();
     for (let i = 0; i < body.fotos_secundarias_base64.length; i++) {
-      const imgPath = petExtraImgPath(petId, existingSecondary.length + i + 1);
-      const existingImg = await getFile(imgPath);
+      const newImgPath = `images/pets/${petId}-extra-${ts}-${i}.webp`;
       await putFile(
-        imgPath,
+        newImgPath,
         body.fotos_secundarias_base64[i],
         `Add extra image ${i + 1} for ${petId}`,
-        existingImg?.sha,
       );
-      newSecondaryUrls.push(`${cdnImageUrl(imgPath)}?v=${Date.now()}`);
+      newSecondaryUrls.push(cdnImageUrl(newImgPath));
+    }
+  }
+  
+  // Limpieza de fotos secundarias antiguas eliminadas
+  if (isUpdate && existingPet) {
+    const keptUrls = new Set(existingSecondary);
+    for (const oldUrl of (existingPet.fotos_secundarias || [])) {
+      if (!keptUrls.has(oldUrl)) {
+        const oldPath = extractPathFromCdnUrl(oldUrl);
+        if (oldPath) {
+          try {
+            const oldFile = await getFile(oldPath);
+            if (oldFile) await deleteFile(oldPath, oldFile.sha, `Remove extra image for ${petId}`);
+          } catch (e) {
+            console.warn('No se pudo borrar foto secundaria antigua', oldPath);
+          }
+        }
+      }
     }
   }
 
@@ -232,28 +262,30 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
   }
 
   // Eliminar imagen principal
-  const mainImg = await getFile(petMainImgPath(id));
-  if (mainImg) {
-    await deleteFile(petMainImgPath(id), mainImg.sha, `Delete main image for ${id}`);
+  if (pet.imagen_principal) {
+    const mainPath = extractPathFromCdnUrl(pet.imagen_principal) ?? petMainImgPath(id);
+    const mainImg = await getFile(mainPath);
+    if (mainImg) {
+      await deleteFile(mainPath, mainImg.sha, `Delete main image for ${id}`);
+    }
   }
 
-  // Eliminar imágenes secundarias (máx 10 slots): 2 fases paralelas.
-  // Fase 1: verificar existencia de todos los slots simultáneamente.
-  // Fase 2: eliminar en paralelo solo los que existan.
-  // Esto reduce ~20 llamadas seriales a 2 rondas paralelas (< 2 s vs > 10 s).
-  const extraSlots = Array.from({ length: 10 }, (_, i) => i + 1);
-  const extraResults = await Promise.allSettled(
-    extraSlots.map((n) => getFile(petExtraImgPath(id, n)))
-  );
-  await Promise.allSettled(
-    extraResults
-      .map((r, i) => ({ result: r, n: extraSlots[i] }))
-      .filter(({ result }) => result.status === 'fulfilled' && result.value !== null)
-      .map(({ result, n }) => {
-        const file = (result as PromiseFulfilledResult<Awaited<ReturnType<typeof getFile>>>).value!;
-        return deleteFile(petExtraImgPath(id, n), file.sha, `Delete extra image ${n} for ${id}`);
-      })
-  );
+  // Eliminar imágenes secundarias
+  if (pet.fotos_secundarias?.length) {
+    const extraPaths = pet.fotos_secundarias.map(extractPathFromCdnUrl).filter(Boolean) as string[];
+    const extraResults = await Promise.allSettled(
+      extraPaths.map((p) => getFile(p))
+    );
+    await Promise.allSettled(
+      extraResults
+        .map((r, i) => ({ result: r, path: extraPaths[i] }))
+        .filter(({ result }) => result.status === 'fulfilled' && result.value !== null)
+        .map(({ result, path }) => {
+          const file = (result as PromiseFulfilledResult<Awaited<ReturnType<typeof getFile>>>).value!;
+          return deleteFile(path, file.sha, `Delete extra image for ${id}`);
+        })
+    );
+  }
 
   return res.status(200).json({ ok: true });
 }

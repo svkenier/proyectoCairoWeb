@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getAuthPayload } from './_lib/auth.js';
-import { getFile, getFileWithETag, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath } from './_lib/github.js';
+import { getFile, getFileWithETag, putFile, deleteFile, announcementImgPath, cdnImageUrl, ANNOUNCEMENTS_JSON_PATH, announcementJsonPath, extractPathFromCdnUrl } from './_lib/github.js';
 import { publicRateLimit, checkRateLimit } from './_lib/rate-limit.js';
 import { ROLE_LEVEL } from '../src/types/user.js';
 import type { Announcement, AnnouncementUpsertBody } from '../src/types/announcement.js';
@@ -87,27 +87,46 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse, isUpdate: b
     const id = body.id || `announcement-${Date.now()}`;
     let finalImageUrl = body.image_url || '';
 
-    // Si hay una nueva imagen en base64, subirla a Github
+    // Si hay una nueva imagen en base64, subirla a Github con un path único
     if (body.image_base64) {
-      const imgPath = announcementImgPath(id);
-      const existingImg = await getFile(imgPath);
-      await putFile(
-        imgPath,
-        body.image_base64,
-        `${isUpdate ? 'Update' : 'Add'} announcement image for ${id}`,
-        existingImg?.sha
-      );
-      finalImageUrl = `${cdnImageUrl(imgPath)}?v=${Date.now()}`;
-    } else if (isUpdate && !finalImageUrl) {
-      // El usuario eliminó la imagen existente
-      try {
-        const imgPath = announcementImgPath(id);
-        const existingImg = await getFile(imgPath);
-        if (existingImg) {
-          await deleteFile(imgPath, existingImg.sha, `Remove announcement image for ${id}`);
+      const ts = Date.now();
+      const newImgPath = `images/announcements/${id}-${ts}.webp`;
+      
+      // Borrar la vieja si existe
+      if (isUpdate) {
+        const oldAnnouncement = announcements.find(a => a.id === id);
+        if (oldAnnouncement?.image_url) {
+          const oldPath = extractPathFromCdnUrl(oldAnnouncement.image_url);
+          if (oldPath) {
+            try {
+              const oldFile = await getFile(oldPath);
+              if (oldFile) await deleteFile(oldPath, oldFile.sha, `Remove old announcement image for ${id}`);
+            } catch (e) {
+              console.warn('No se pudo borrar la imagen vieja del anuncio', e);
+            }
+          }
         }
-      } catch (err) {
-        console.warn(`No se pudo eliminar imagen antigua del anuncio ${id}:`, err);
+      }
+
+      await putFile(
+        newImgPath,
+        body.image_base64,
+        `${isUpdate ? 'Update' : 'Add'} announcement image for ${id}`
+      );
+      finalImageUrl = cdnImageUrl(newImgPath);
+    } else if (isUpdate && !finalImageUrl) {
+      // El usuario eliminó la imagen existente, la borramos del repo
+      const oldAnnouncement = announcements.find(a => a.id === id);
+      if (oldAnnouncement?.image_url) {
+        const oldPath = extractPathFromCdnUrl(oldAnnouncement.image_url);
+        if (oldPath) {
+          try {
+            const oldFile = await getFile(oldPath);
+            if (oldFile) await deleteFile(oldPath, oldFile.sha, `Remove announcement image for ${id}`);
+          } catch (err) {
+            console.warn(`No se pudo eliminar imagen antigua del anuncio ${id}:`, err);
+          }
+        }
       }
     }
 
@@ -203,15 +222,18 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
       console.warn(`No se pudo eliminar el JSON individual para anuncio ${id}:`, err);
     }
 
-    // Intentar eliminar la imagen de GitHub (no es fatal si falla o no existe)
-    try {
-      const imgPath = announcementImgPath(id);
-      const existingImg = await getFile(imgPath);
-      if (existingImg) {
-        await deleteFile(imgPath, existingImg.sha, `Delete announcement image for ${id}`);
+    // Intentar eliminar la imagen de GitHub
+    const announcement = announcements.find(a => a.id === id);
+    if (announcement?.image_url) {
+      const imgPath = extractPathFromCdnUrl(announcement.image_url) ?? announcementImgPath(id);
+      try {
+        const existingImg = await getFile(imgPath);
+        if (existingImg) {
+          await deleteFile(imgPath, existingImg.sha, `Delete announcement image for ${id}`);
+        }
+      } catch (imgErr) {
+        console.warn(`No se pudo eliminar imagen para anuncio ${id}:`, imgErr);
       }
-    } catch (imgErr) {
-      console.warn(`No se pudo eliminar imagen para anuncio ${id}:`, imgErr);
     }
 
     return res.status(200).json({ ok: true });
