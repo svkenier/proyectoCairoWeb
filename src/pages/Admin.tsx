@@ -93,6 +93,14 @@ export default function Admin() {
     queryFn: async () => {
       const res = await get<{ mascotas: Pet[] }>('/public/pets');
       const pets = res.mascotas ?? [];
+      
+      // Ordenar: destacados primero
+      pets.sort((a, b) => {
+        if (a.destacado && !b.destacado) return -1;
+        if (!a.destacado && b.destacado) return 1;
+        return 0;
+      });
+
       return { 
         mascotas: pets, 
         generated_at: new Date().toISOString(),
