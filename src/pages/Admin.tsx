@@ -6,7 +6,7 @@
  * 2. Usuarios: Gestión de usuarios del refugio (solo encargado/superadmin).
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -79,6 +79,10 @@ export default function Admin() {
   const { user } = useAuth();
   const qc = useQueryClient();
 
+  useEffect(() => {
+    document.title = 'Panel de Administración — Proyecto Cairo';
+  }, []);
+
   const [tabIndex, setTabIndex] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -146,7 +150,7 @@ export default function Admin() {
         {/* Header Admin */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
           {/* Hamburger Menu solo en móvil */}
-          <IconButton aria-label="Acción" 
+          <IconButton aria-label="Abrir menú de administración" 
             onClick={() => setDrawerOpen(true)} 
             sx={{ display: { xs: 'block', md: 'none' }, color: 'primary.main' }}
           >
@@ -242,6 +246,9 @@ export default function Admin() {
                     component="img"
                     src={pet.imagen_principal || PET_IMAGE_FALLBACK}
                     alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
+                    width="80"
+                    height="80"
+                    loading="lazy"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                     sx={{ width: 80, height: 80, objectFit: 'cover' }}
                   />
@@ -269,6 +276,7 @@ export default function Admin() {
                       fullWidth 
                       href={`/mascotas/${pet.id}`} 
                       target="_blank"
+                      rel="noopener noreferrer"
                       startIcon={<OpenInNewIcon />}
                     >
                       Ver
@@ -330,6 +338,9 @@ export default function Admin() {
                             component="img"
                             src={pet.imagen_principal || PET_IMAGE_FALLBACK}
                             alt={pet.nombre ? `Miniatura de ${pet.nombre}` : 'Miniatura de mascota'}
+                            width="40"
+                            height="40"
+                            loading="lazy"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK; }}
                             sx={{ width: 40, height: 40, borderRadius: 0, objectFit: 'cover' }}
                           />
@@ -352,17 +363,17 @@ export default function Admin() {
                         </TableCell>
                         <TableCell align="right">
                           <Tooltip title="Ver ficha pública">
-                            <IconButton aria-label="Acción" size="small" href={`/mascotas/${pet.id}`} target="_blank" rel="noopener noreferrer">
+                            <IconButton aria-label="Ver ficha pública" size="small" href={`/mascotas/${pet.id}`} target="_blank" rel="noopener noreferrer">
                               <OpenInNewIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Editar mascota">
-                            <IconButton aria-label="Acción" size="small" color="primary" onClick={() => handleOpenEdit(pet)}>
+                            <IconButton aria-label="Editar mascota" size="small" color="primary" onClick={() => handleOpenEdit(pet)}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Eliminar mascota">
-                            <IconButton aria-label="Acción" size="small" color="error" onClick={() => setPetToDelete(pet)}>
+                            <IconButton aria-label="Eliminar mascota" size="small" color="error" onClick={() => setPetToDelete(pet)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>

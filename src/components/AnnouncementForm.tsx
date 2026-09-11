@@ -186,7 +186,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
         <Typography variant="h6" fontWeight={700}>
           {isEdit ? 'Editar Anuncio' : 'Nuevo Anuncio'}
         </Typography>
-        <IconButton aria-label="Acción" onClick={onClose} size="small" disabled={mutation.isPending}>
+        <IconButton aria-label="Cerrar formulario" onClick={onClose} size="small" disabled={mutation.isPending}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -232,7 +232,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
                     sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                   <Tooltip title="Cambiar foto">
-                    <IconButton aria-label="Acción"
+                    <IconButton aria-label="Cambiar foto principal"
                       component="span"
                       size="small"
                       sx={{
