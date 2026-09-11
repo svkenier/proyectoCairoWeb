@@ -76,7 +76,7 @@ export default function Catalog() {
     if (!data) return [];
     const q = filters.busqueda?.trim().toLowerCase() ?? '';
 
-    return data.mascotas.filter((p) => {
+    const results = data.mascotas.filter((p) => {
       if (q && !p.nombre.toLowerCase().includes(q) && !(p.raza ?? '').toLowerCase().includes(q))
         return false;
       if (filters.especie && p.especie !== filters.especie) return false;
@@ -84,6 +84,12 @@ export default function Catalog() {
       if (filters.tamano  && p.tamano  !== filters.tamano)  return false;
       if (filters.estado  && p.estado  !== filters.estado)  return false;
       return true;
+    });
+
+    return results.sort((a, b) => {
+      if (a.destacado && !b.destacado) return -1;
+      if (!a.destacado && b.destacado) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [data, filters]);
 

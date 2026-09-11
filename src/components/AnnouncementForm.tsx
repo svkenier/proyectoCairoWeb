@@ -258,7 +258,6 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
               id="announcement-img"
               type="file"
               accept="image/*"
-              capture="environment"
               style={{ display: 'none' }}
               onChange={handleFile}
             />

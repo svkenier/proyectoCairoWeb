@@ -83,10 +83,14 @@ export default function Home() {
   // Mostrar hasta 8 mascotas: priorizar destacadas, rellenar con recientes
   const displayPets = useMemo(() => {
     if (!data?.mascotas) return [];
-    const available = data.mascotas.filter((p) => p.estado !== 'adoptado');
-    const featured = available.filter(p => p.destacado === true);
-    const regular = available.filter(p => p.destacado !== true).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return [...featured, ...regular].slice(0, 8);
+    return data.mascotas
+      .filter((p) => p.estado !== 'adoptado')
+      .sort((a, b) => {
+        if (a.destacado && !b.destacado) return -1;
+        if (!a.destacado && b.destacado) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      })
+      .slice(0, 8);
   }, [data]);
   
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));

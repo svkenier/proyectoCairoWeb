@@ -158,7 +158,6 @@ function ImagePicker({ label, preview, onFile, onClear, size = 'large' }: ImageP
         id={`img-picker-${label}`}
         type="file"
         accept="image/*"
-        capture="environment"
         style={{ display: 'none' }}
         onChange={handleChange}
       />
