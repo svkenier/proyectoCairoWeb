@@ -40,6 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           announcements = [];
         }
       }
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
       return res.status(200).json(announcements);
     } catch (err) {
       console.error('[GET /api/announcements] Error:', err);

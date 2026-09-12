@@ -28,6 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         settings = JSON.parse(Buffer.from(ghRes.data.content, 'base64').toString('utf-8'));
       }
 
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
       return res.status(200).json(settings || {});
     } catch (err) {
       console.error('[GET /api/settings] Error:', err);

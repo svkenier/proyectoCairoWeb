@@ -115,10 +115,11 @@ export async function listUsers(): Promise<PublicUser[]> {
 
   if (usernames.length === 0) return [];
 
-  const users = await Promise.all(usernames.map((name) => redis.get<KVUser>(userKey(name))));
+  const userKeys = usernames.map(userKey);
+  const users = (await redis.mget(...userKeys)) as (KVUser | null)[];
 
   return users
-    .filter((u): u is KVUser => u !== null)
+    .filter((u): u is KVUser => Boolean(u))
     .map(({ password_hash: _ph, ...pub }) => pub as PublicUser)
     .sort((a, b) => a.username.localeCompare(b.username));
 }
