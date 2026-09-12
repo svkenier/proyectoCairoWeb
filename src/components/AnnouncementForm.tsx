@@ -73,26 +73,6 @@ const validationSchema = Yup.object({
   is_active: Yup.boolean(),
 });
 
-// ─── Helpers de imagen ────────────────────────────────────────────────────────
-
-async function fileToBase64(file: File): Promise<string> {
-  const result = await optimizeImage(file);
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => {
-      const result = reader.result as string;
-      resolve(result.split(',')[1] ?? '');
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(result.blob);
-  });
-}
-
-async function fileToPreview(file: File): Promise<string> {
-  const result = await optimizeImage(file);
-  return URL.createObjectURL(result.blob);
-}
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function AnnouncementForm({ open, onClose, initial }: AnnouncementFormProps) {

@@ -75,28 +75,6 @@ const validationSchema = Yup.object({
   desparasitado: Yup.boolean(),
 });
 
-// ─── Helpers de imagen ────────────────────────────────────────────────────────
-
-async function fileToBase64(file: File): Promise<string> {
-  // Optimizar a WebP primero (usará los defaults: 700px, 80%)
-  const result = await optimizeImage(file);
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => {
-      const result = reader.result as string;
-      // Quitar el prefijo data:image/webp;base64,
-      resolve(result.split(',')[1] ?? '');
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(result.blob);
-  });
-}
-
-async function fileToPreview(file: File): Promise<string> {
-  const result = await optimizeImage(file);
-  return URL.createObjectURL(result.blob);
-}
-
 // ─── Componente imagen picker ─────────────────────────────────────────────────
 
 interface ImagePickerProps {
