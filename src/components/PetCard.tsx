@@ -89,22 +89,24 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
         sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
       >
         {/* Imagen */}
-        <Box sx={{ position: 'relative' }}>
+        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', bgcolor: 'grey.100' }}>
           <CardMedia
             component="img"
             loading={loading}
             fetchPriority={loading === 'eager' ? 'high' : 'auto'}
             decoding="async"
             image={getOptimizedImageUrl(pet.imagen_principal)}
-            alt={pet.nombre ? `Foto de ${pet.nombre}` : 'Foto de mascota'}
+            alt={pet.alt_text ? pet.alt_text : (pet.nombre ? `${pet.nombre}, ${pet.especie || 'mascota'} en adopción` : 'Mascota en adopción')}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = PET_IMAGE_FALLBACK;
             }}
             sx={{
-              aspectRatio: '4/3',
+              position:   'absolute',
+              top:        0,
+              left:       0,
               width:      '100%',
+              height:     '100%',
               objectFit:  'cover',
-              bgcolor:    'grey.100',
             }}
           />
 

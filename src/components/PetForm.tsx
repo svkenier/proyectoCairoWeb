@@ -55,7 +55,7 @@ interface PetFormProps {
 const EMPTY = {
   nombre: '', especie: '', raza: '', sexo: '',
   tamano: '', edad_aproximada: '', peso_kg: '',
-  descripcion: '', estado: 'disponible',
+  descripcion: '', estado: 'disponible', alt_text: '',
   destacado: false, vacunado: false, esterilizado: false, desparasitado: false,
 };
 
@@ -157,7 +157,7 @@ function ImagePicker({ label, preview, onFile, onClear, size = 'large' }: ImageP
       <input
         id={`img-picker-${label}`}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         style={{ display: 'none' }}
         onChange={handleChange}
       />
@@ -198,6 +198,7 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
           peso_kg:         initial.peso_kg !== undefined ? String(initial.peso_kg) : '',
           descripcion:     initial.descripcion     ?? '',
           estado:          initial.estado          ?? 'disponible',
+          alt_text:        initial.alt_text        ?? '',
           destacado:       initial.destacado       ?? false,
           vacunado:        initial.vacunado        ?? false,
           esterilizado:    initial.esterilizado    ?? false,
@@ -214,6 +215,8 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
   // Imágenes
   const [mainPreview,  setMainPreview]  = useState<string>(initial?.imagen_principal ?? '');
   const [mainBase64,   setMainBase64]   = useState<string>('');
+  const [mainWidth,    setMainWidth]    = useState<number | undefined>(initial?.imagen_principal_width);
+  const [mainHeight,   setMainHeight]   = useState<number | undefined>(initial?.imagen_principal_height);
   const [extraFiles,   setExtraFiles]   = useState<{ preview: string; base64: string }[]>([]);
   const [imgLoading,   setImgLoading]   = useState(false);
   const [error,        setError]        = useState('');
@@ -223,9 +226,17 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
   const handleMainFile = useCallback(async (file: File) => {
     setImgLoading(true);
     try {
-      const [preview, b64] = await Promise.all([fileToPreview(file), fileToBase64(file)]);
-      setMainPreview(preview);
+      const result = await optimizeImage(file);
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve((reader.result as string).split(',')[1] ?? '');
+        reader.onerror = reject;
+        reader.readAsDataURL(result.blob);
+      });
+      setMainPreview(result.previewUrl);
       setMainBase64(b64);
+      setMainWidth(result.width);
+      setMainHeight(result.height);
     } finally {
       setImgLoading(false);
     }
@@ -237,8 +248,14 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
     if (extraFiles.length >= 5) return;
     setImgLoading(true);
     try {
-      const [preview, b64] = await Promise.all([fileToPreview(file), fileToBase64(file)]);
-      setExtraFiles((p) => [...p, { preview, base64: b64 }]);
+      const result = await optimizeImage(file);
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve((reader.result as string).split(',')[1] ?? '');
+        reader.onerror = reject;
+        reader.readAsDataURL(result.blob);
+      });
+      setExtraFiles((p) => [...p, { preview: result.previewUrl, base64: b64 }]);
     } finally {
       setImgLoading(false);
     }
@@ -255,7 +272,11 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
         ...(isEdit && initial?.id ? { id: initial.id } : {}),
         ...formik.values,
         peso_kg: formik.values.peso_kg ? parseFloat(formik.values.peso_kg as string) : undefined,
-        ...(mainBase64 ? { imagen_principal_base64: mainBase64 } : {}),
+        ...(mainBase64 ? { 
+          imagen_principal_base64: mainBase64,
+          imagen_principal_width: mainWidth,
+          imagen_principal_height: mainHeight,
+        } : {}),
         ...(extraFiles.length > 0
           ? { fotos_secundarias_base64: extraFiles.map((f) => f.base64) }
           : {}),
@@ -445,6 +466,18 @@ export default function PetForm({ open, onClose, initial }: PetFormProps) {
               rows={3}
               size="small"
               placeholder="Historia, personalidad, necesidades especiales..."
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Texto alternativo para accesibilidad (descripción visual para lectores de pantalla) (Opcional)"
+              name="alt_text"
+              value={formik.values.alt_text}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              fullWidth
+              size="small"
+              placeholder="Ej: Perro blanco con manchas negras jugando en el pasto"
             />
           </Grid>
         </Grid>

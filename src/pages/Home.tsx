@@ -172,11 +172,13 @@ export default function Home() {
             }
           }}
         >
-          <source media="(min-width: 900px)" srcSet="/hero-desktop.webp" />
+          <source media="(min-width: 900px)" srcSet="/hero-desktop.webp" width="1920" height="1080" />
           <img
             src="/hero-mobile.webp"
             alt="Refugio de mascotas Cairo"
             fetchPriority="high"
+            width="800"
+            height="1200"
           />
         </Box>
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>

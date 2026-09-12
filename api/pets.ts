@@ -38,6 +38,9 @@ interface PetUpsertBody {
   descripcion?:                string;
   estado?:                     string;
   destacado?:                  boolean;
+  alt_text?:                   string;
+  imagen_principal_width?:     number;
+  imagen_principal_height?:    number;
   // Imágenes en base64 WebP
   imagen_principal_base64?:    string;
   fotos_secundarias_base64?:   string[];
@@ -173,6 +176,9 @@ async function handleUpsert(req: VercelRequest, res: VercelResponse) {
     descripcion:        body.descripcion    ?? existingPet?.descripcion ?? '',
     estado:             (body.estado as Pet['estado'])   ?? existingPet?.estado   ?? 'disponible',
     destacado:          body.destacado      ?? existingPet?.destacado   ?? false,
+    alt_text:           body.alt_text       ?? existingPet?.alt_text,
+    imagen_principal_width:  body.imagen_principal_width ?? existingPet?.imagen_principal_width,
+    imagen_principal_height: body.imagen_principal_height ?? existingPet?.imagen_principal_height,
     imagen_principal:   imagenPrincipalUrl,
     fotos_secundarias:  [...existingSecondary, ...newSecondaryUrls],
     created_at:         existingPet?.created_at ?? now,

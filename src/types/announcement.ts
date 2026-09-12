@@ -29,6 +29,15 @@ export interface Announcement {
   /** URL pública de la imagen o flyer en GitHub (generada tras subir base64) */
   image_url: string;
   
+  /** Texto alternativo descriptivo del flyer para accesibilidad */
+  alt_text?: string;
+  
+  /** Ancho intrínseco de la imagen */
+  image_width?: number;
+  
+  /** Alto intrínseco de la imagen */
+  image_height?: number;
+
   /** Estado del anuncio (true = visible en la web pública) */
   is_active: boolean;
   

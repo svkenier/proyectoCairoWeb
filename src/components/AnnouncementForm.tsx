@@ -52,6 +52,7 @@ const EMPTY = {
   title: '',
   type: 'general' as AnnouncementType,
   description: '',
+  alt_text: '',
   date: new Date().toISOString().split('T')[0],
   time: '',
   location: '',
@@ -104,6 +105,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
           title:       initial.title,
           type:        initial.type,
           description: initial.description,
+          alt_text:    initial.alt_text ?? '',
           date:        initial.date,
           time:        initial.time ?? '',
           location:    initial.location ?? '',
@@ -119,6 +121,8 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
 
   const [preview, setPreview] = useState<string>(initial?.image_url ?? '');
   const [base64, setBase64]   = useState<string>('');
+  const [imgWidth, setImgWidth] = useState<number | undefined>(initial?.image_width);
+  const [imgHeight, setImgHeight] = useState<number | undefined>(initial?.image_height);
   const [imgLoading, setImgLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -127,9 +131,17 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
     if (!file) return;
     setImgLoading(true);
     try {
-      const [prev, b64] = await Promise.all([fileToPreview(file), fileToBase64(file)]);
-      setPreview(prev);
+      const result = await optimizeImage(file);
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve((reader.result as string).split(',')[1] ?? '');
+        reader.onerror = reject;
+        reader.readAsDataURL(result.blob);
+      });
+      setPreview(result.previewUrl);
       setBase64(b64);
+      setImgWidth(result.width);
+      setImgHeight(result.height);
     } catch (err) {
       console.error(err);
       setError('Error al procesar la imagen');
@@ -144,7 +156,11 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
       const payload = {
         ...(isEdit && initial?.id ? { id: initial.id } : {}),
         ...formik.values,
-        ...(base64 ? { image_base64: base64 } : {}),
+        ...(base64 ? { 
+          image_base64: base64,
+          image_width: imgWidth,
+          image_height: imgHeight,
+        } : {}),
         ...(isEdit ? { image_url: initial?.image_url } : {}),
       };
       
@@ -257,7 +273,7 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
             <input
               id="announcement-img"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               style={{ display: 'none' }}
               onChange={handleFile}
             />
@@ -343,6 +359,18 @@ export default function AnnouncementForm({ open, onClose, initial }: Announcemen
               error={formik.touched.description && Boolean(formik.errors.description)}
               helperText={formik.touched.description && (formik.errors.description as string)}
               fullWidth multiline rows={3} size="small"
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Texto alternativo para accesibilidad (Opcional)"
+              name="alt_text"
+              value={formik.values.alt_text}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              fullWidth size="small"
+              placeholder="Ej: Flyer amarillo indicando fecha y hora de la jornada de vacunación"
             />
           </Grid>
 

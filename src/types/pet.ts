@@ -30,6 +30,15 @@ export interface Pet {
   /** URL absoluta de la foto principal en WebP (CDN jsDelivr) — REQUERIDO. */
   imagen_principal: string;
 
+  /** Texto alternativo para accesibilidad y SEO — OPCIONAL. */
+  alt_text?: string;
+
+  /** Ancho intrínseco de la imagen principal — OPCIONAL. */
+  imagen_principal_width?: number;
+
+  /** Alto intrínseco de la imagen principal — OPCIONAL. */
+  imagen_principal_height?: number;
+
   /** Array de URLs de fotos secundarias en WebP — OPCIONAL. */
   fotos_secundarias?: string[];
 
