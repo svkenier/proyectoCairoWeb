@@ -15,7 +15,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { AuthState, JWTPayload, PublicUser, LoginRequest, LoginResponse } from '@/types/user';
+import type { PublicUser, LoginRequest, LoginResponse } from '@/types/user';
 import { clearSession, post } from '@/api/client';
 
 const USER_KEY = 'petrescue_user';

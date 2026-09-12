@@ -19,7 +19,7 @@ import Stack from '@mui/material/Stack';
 import LockResetIcon  from '@mui/icons-material/LockReset';
 import DeleteIcon     from '@mui/icons-material/Delete';
 import LogoutIcon     from '@mui/icons-material/Logout';
-import { canManage, ROLE_LEVEL } from '@/types/user';
+import { canManage } from '@/types/user';
 import type { PublicUser, UserRole } from '@/types/user';
 
 const MAIN_OWNER = 'svkenier';
