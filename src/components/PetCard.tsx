@@ -174,7 +174,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
                 label={SPECIES_LABEL[pet.especie] ?? pet.especie}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 24 }}
               />
             )}
             {pet.sexo === 'macho' && (
@@ -183,7 +183,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
                 label="Macho"
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 24 }}
               />
             )}
             {pet.sexo === 'hembra' && (
@@ -192,7 +192,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
                 label="Hembra"
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 24 }}
               />
             )}
             {pet.tamano && (
@@ -200,7 +200,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
                 label={SIZE_LABEL[pet.tamano] ?? pet.tamano}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 24 }}
               />
             )}
             {pet.edad_aproximada && (
@@ -208,7 +208,7 @@ const PetCard = memo(function PetCard({ pet, loading = 'lazy' }: PetCardProps) {
                 label={pet.edad_aproximada}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.7rem', height: 24 }}
+                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 24 }}
               />
             )}
           </Box>

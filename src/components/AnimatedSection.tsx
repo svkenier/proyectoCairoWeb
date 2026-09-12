@@ -55,6 +55,7 @@ export default function AnimatedSection({
 }: AnimatedSectionProps) {
   const ref        = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -82,11 +83,16 @@ export default function AnimatedSection({
   return (
     <Box
       ref={ref}
+      onTransitionEnd={(e) => {
+        if (e.target === ref.current && visible) {
+          setFinished(true);
+        }
+      }}
       sx={{
         opacity:    visible ? 1 : 0,
         transform:  visible ? 'translate(0, 0)' : translateHidden,
         transition: `opacity 500ms ease ${delay}ms, transform 500ms ease ${delay}ms`,
-        willChange: 'opacity, transform',
+        willChange: finished ? 'auto' : 'opacity, transform',
         ...sx,
       }}
     >
