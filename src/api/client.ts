@@ -17,22 +17,10 @@ import axios, {
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const TOKEN_KEY = 'petrescue_token';
-const BASE_URL  = '/api'; // Vercel rewrites /api/* → Serverless Functions
-
 // ─── Helpers de sesión ───────────────────────────────────────────────────────
 
-/** Obtiene el token JWT del localStorage (o null si no existe). */
-export const getToken = (): string | null =>
-  localStorage.getItem(TOKEN_KEY);
-
-/** Persiste el token JWT en localStorage. */
-export const setToken = (token: string): void =>
-  void localStorage.setItem(TOKEN_KEY, token);
-
-/** Elimina el token JWT y cualquier dato de sesión del localStorage. */
+/** Elimina los datos de sesión del localStorage. */
 export const clearSession = (): void => {
-  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem('petrescue_user');
 };
 
@@ -45,9 +33,12 @@ const etagCache = new Map<string, CacheEntry>();
 
 // ─── Instancia de Axios ───────────────────────────────────────────────────────
 
+const BASE_URL  = '/api'; // Vercel rewrites /api/* → Serverless Functions
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 20_000, // 20 segundos máximo por petición
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -58,12 +49,6 @@ const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = getToken();
-
-    if (token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-
     // Inyectar ETag si existe en caché para peticiones GET
     if (config.method?.toLowerCase() === 'get' && config.url) {
       const cached = etagCache.get(config.url);

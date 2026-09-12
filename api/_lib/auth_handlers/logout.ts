@@ -37,5 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await activateTTL(payload.sub, TTL_30_DAYS);
   }
 
+  res.setHeader(
+    'Set-Cookie',
+    'petrescue_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0'
+  );
+
   return res.status(200).json({ ok: true });
 }

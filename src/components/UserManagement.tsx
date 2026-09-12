@@ -1,364 +1,43 @@
 /**
  * UserManagement — Panel de gestión de usuarios del refugio.
- *
- * Funcionalidades:
- * - Tabla de usuarios con rol, creador y último acceso.
- * - Crear usuario (Dialog con form).
- * - Resetear contraseña de un usuario.
- * - Eliminar usuario (con confirmación).
- *
- * Restricciones de jerarquía aplicadas en frontend y backend:
- * - No se puede modificar al superadmin principal.
- * - No se puede modificar a uno mismo.
- * - encargado solo gestiona voluntarios.
+ * Refactorizado para usar componentes modulares.
  */
-
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
 import Box from '@mui/material/Box';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Chip from '@mui/material/Chip';
-import Tooltip from '@mui/material/Tooltip';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import InputAdornment from '@mui/material/InputAdornment';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
-import Skeleton from '@mui/material/Skeleton';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardActions from '@mui/material/CardActions';
-import Stack from '@mui/material/Stack';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
-import PersonAddIcon  from '@mui/icons-material/PersonAdd';
-import LockResetIcon  from '@mui/icons-material/LockReset';
-import DeleteIcon     from '@mui/icons-material/Delete';
-import LogoutIcon     from '@mui/icons-material/Logout';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
 import { useAuth } from '@/contexts/AuthContext';
-import { get, post, del, formatApiError } from '@/api/client';
-import { canManage, canCreateRole, ROLE_LEVEL } from '@/types/user';
-import type { PublicUser, UserRole } from '@/types/user';
+import { ROLE_LEVEL } from '@/types/user';
 
-const MAIN_OWNER = 'svkenier';
-
-const ROLE_COLORS: Record<UserRole, 'error' | 'warning' | 'default'> = {
-  superadmin: 'error',
-  encargado:  'warning',
-  voluntario: 'default',
-};
-
-// ─── Dialogs internos ─────────────────────────────────────────────────────────
-
-interface CreateUserDialogProps {
-  open:        boolean;
-  actorRole:   UserRole;
-  onClose:     () => void;
-  onCreated:   () => void;
-}
-
-const createUserSchema = Yup.object({
-  username: Yup.string()
-    .matches(/^[a-z0-9_]+$/, 'Solo letras minúsculas, números y _')
-    .required('El usuario es obligatorio'),
-  password: Yup.string()
-    .min(8, 'Debe tener al menos 8 caracteres')
-    .required('La contraseña es obligatoria'),
-  role: Yup.string().required('El rol es obligatorio'),
-});
-
-function CreateUserDialog({ open, actorRole, onClose, onCreated }: CreateUserDialogProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError]       = useState('');
-
-  const formik = useFormik({
-    initialValues: {
-      username: '',
-      password: '',
-      role: 'voluntario' as UserRole,
-    },
-    validationSchema: createUserSchema,
-    onSubmit: () => {
-      mutation.mutate();
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: () => post('/users/create', formik.values),
-    onSuccess:  () => { onCreated(); onClose(); formik.resetForm(); },
-    onError:    (e: unknown) => setError(formatApiError(e, 'Error al crear usuario')),
-  });
-
-  const availableRoles: UserRole[] = (['voluntario', 'encargado', 'superadmin'] as UserRole[])
-    .filter((r) => canCreateRole(actorRole, r));
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: 0 } }}>
-      <DialogTitle fontWeight={700}>Crear usuario</DialogTitle>
-      <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          <TextField
-            label="Usuario *"
-            name="username"
-            value={formik.values.username}
-            onChange={(e) => {
-              const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-              formik.setFieldValue('username', val);
-            }}
-            onBlur={formik.handleBlur}
-            error={formik.touched.username && Boolean(formik.errors.username)}
-            helperText={(formik.touched.username && formik.errors.username) || "Solo letras minúsculas, números y _"}
-            fullWidth size="small"
-          />
-          <TextField
-            label="Contraseña *"
-            name="password"
-            type={showPassword ? 'text' : 'password'}
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.password && Boolean(formik.errors.password)}
-            helperText={(formik.touched.password && formik.errors.password) || "Mínimo 8 caracteres"}
-            fullWidth size="small"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
-                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <FormControl fullWidth size="small" error={formik.touched.role && Boolean(formik.errors.role)}>
-            <InputLabel>Rol</InputLabel>
-            <Select name="role" value={formik.values.role} label="Rol" onChange={formik.handleChange} onBlur={formik.handleBlur}>
-              {availableRoles.map((r) => (
-                <MenuItem key={r} value={r} sx={{ textTransform: 'capitalize' }}>{r}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={() => { onClose(); formik.resetForm(); setError(''); }} color="inherit">Cancelar</Button>
-        <Button
-          variant="contained"
-          disabled={mutation.isPending || formik.isSubmitting}
-          onClick={() => formik.handleSubmit()}
-          startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
-        >
-          Crear
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-interface ResetPasswordDialogProps {
-  target:  PublicUser | null;
-  onClose: () => void;
-}
-
-const resetPasswordSchema = Yup.object({
-  password: Yup.string()
-    .min(8, 'Debe tener al menos 8 caracteres')
-    .required('La contraseña es obligatoria'),
-});
-
-function ResetPasswordDialog({ target, onClose }: ResetPasswordDialogProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError]       = useState('');
-  const [done, setDone]         = useState(false);
-
-  const formik = useFormik({
-    initialValues: {
-      password: '',
-    },
-    validationSchema: resetPasswordSchema,
-    onSubmit: () => {
-      mutation.mutate();
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: () => post('/users/reset-password', { target_username: target?.username, new_password: formik.values.password }),
-    onSuccess:  () => setDone(true),
-    onError:    (e: unknown) => setError(formatApiError(e, 'Error al resetear la contraseña')),
-  });
-
-  const handleClose = () => {
-    onClose();
-    formik.resetForm();
-    setError('');
-    setDone(false);
-  };
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  return (
-    <Dialog open={Boolean(target)} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={isMobile} PaperProps={{ sx: { borderRadius: 0 } }}>
-      <DialogTitle fontWeight={700}>Resetear contraseña</DialogTitle>
-      <DialogContent>
-        {done ? (
-          <Alert severity="success">
-            Contraseña de <strong>{target?.username}</strong> actualizada exitosamente.
-          </Alert>
-        ) : (
-          <>
-            {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-            <Typography variant="body2" color="text.secondary" mb={2} mt={1}>
-              Nueva contraseña para <strong>{target?.username}</strong>:
-            </Typography>
-            <TextField
-              type={showPassword ? 'text' : 'password'}
-              label="Nueva contraseña *"
-              name="password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={(formik.touched.password && formik.errors.password) || "Mínimo 8 caracteres"}
-              fullWidth size="small"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton aria-label="Acción" onClick={() => setShowPassword(!showPassword)} edge="end" size="small" tabIndex={-1}>
-                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} color="inherit">{done ? 'Cerrar' : 'Cancelar'}</Button>
-        {!done && (
-          <Button
-            variant="contained"
-            color="warning"
-            disabled={mutation.isPending || formik.isSubmitting}
-            onClick={() => formik.handleSubmit()}
-            startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
-          >
-            Resetear
-          </Button>
-        )}
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-// ─── Componente principal ─────────────────────────────────────────────────────
+import { useUserManagement } from './admin/users/useUserManagement';
+import { UserTable } from './admin/users/UserTable';
+import { UserFormModal } from './admin/users/UserFormModal';
+import { PasswordResetModal } from './admin/users/PasswordResetModal';
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
-  const qc = useQueryClient();
-
-  const [createOpen,    setCreateOpen]    = useState(false);
-  const [resetTarget,   setResetTarget]   = useState<PublicUser | null>(null);
-  const [deleteTarget,  setDeleteTarget]  = useState<PublicUser | null>(null);
-  const [deleteError,   setDeleteError]   = useState('');
-  const [forceLogoutTarget, setForceLogoutTarget] = useState<PublicUser | null>(null);
-  const [forceLogoutError,  setForceLogoutError]  = useState('');
-
-  const { data, isLoading, isError } = useQuery<{ users: PublicUser[] }>({
-    queryKey: ['users-list'],
-    queryFn:  () => get('/users/list'),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (username: string) => del('/users/delete', { data: { target_username: username } }),
-    onSuccess:  () => {
-      void qc.invalidateQueries({ queryKey: ['users-list'] });
-      setDeleteTarget(null);
-    },
-    onError: (e: unknown) => setDeleteError(formatApiError(e, 'Error al eliminar usuario')),
-  });
-
-  const forceLogoutMutation = useMutation({
-    mutationFn: (username: string) => post('/users/force-logout', { target_username: username }),
-    onSuccess:  () => {
-      setForceLogoutTarget(null);
-    },
-    onError: (e: unknown) => setForceLogoutError(formatApiError(e, 'Error al forzar el cierre de sesión')),
-  });
-
-  const canActOn = (target: PublicUser) => {
-    if (!currentUser) return { canReset: false, canDelete: false, canForceLogout: false, disabledReason: '' };
-    
-    const isMainOwner = currentUser.username === MAIN_OWNER;
-    const isTargetMainOwner = target.username === MAIN_OWNER;
-    
-    // Si el objetivo es el propietario principal
-    if (isTargetMainOwner) {
-      if (!isMainOwner) {
-        return { 
-          canReset: true, 
-          canDelete: true, 
-          canForceLogout: false,
-          disabled: true, 
-          disabledReason: 'El superusuario principal no puede ser modificado ni eliminado' 
-        };
-      } else {
-        return { 
-          canReset: false, // Usa la función Cambiar Contraseña
-          canDelete: false, // No puede eliminarse a sí mismo
-          canForceLogout: false,
-          disabled: false, 
-          disabledReason: '' 
-        };
-      }
-    }
-    
-    // Si el objetivo es el usuario actual
-    if (target.username === currentUser.username) {
-      return { canReset: false, canDelete: false, canForceLogout: false, disabledReason: '' };
-    }
-    
-    // El Owner principal puede eliminar a todos los demás
-    if (isMainOwner) {
-      return { canReset: true, canDelete: true, canForceLogout: true, disabled: false, disabledReason: '' };
-    }
-    
-    const hasPermission = canManage(currentUser.role, target.role);
-    return { 
-      canReset: hasPermission, 
-      canDelete: hasPermission, 
-      canForceLogout: false,
-      disabled: false, 
-      disabledReason: '' 
-    };
-  };
-
-  const users = data?.users ?? [];
+  
+  const {
+    users,
+    isLoading,
+    isError,
+    createOpen, setCreateOpen,
+    resetTarget, setResetTarget,
+    deleteTarget, setDeleteTarget,
+    deleteError, setDeleteError,
+    forceLogoutTarget, setForceLogoutTarget,
+    forceLogoutError, setForceLogoutError,
+    deleteMutation,
+    forceLogoutMutation,
+    onUserCreated,
+  } = useUserManagement();
 
   return (
     <Box>
@@ -382,206 +61,25 @@ export default function UserManagement() {
         </Alert>
       )}
 
-      {/* ── VISTA DE TARJETAS (MÓVIL) ── */}
-      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
-        {isLoading ? (
-          Array.from({ length: 2 }).map((_, i) => (
-            <Card key={i} variant="outlined" sx={{ borderRadius: 0 }}>
-              <CardContent><Skeleton variant="rectangular" height={100} /></CardContent>
-            </Card>
-          ))
-        ) : users.map((u) => (
-          <Card key={u.username} variant="outlined" sx={{ borderRadius: 0 }}>
-            <CardContent sx={{ pb: 1 }}>
-              <Typography variant="h6" fontWeight={700} lineHeight={1.2} mb={0.5}>
-                {u.username}
-                {u.username === currentUser?.username && (
-                  <Typography component="span" variant="caption" color="text.disabled" ml={1}>(tú)</Typography>
-                )}
-              </Typography>
-              <Chip
-                label={u.role}
-                size="small"
-                color={ROLE_COLORS[u.role]}
-                variant="outlined"
-                sx={{ textTransform: 'capitalize', mb: 1 }}
-              />
-              <Typography variant="body2" color="text.secondary" display="block">
-                Creado por: {u.created_by ?? '—'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" display="block">
-                Último acceso: {u.last_login ? new Date(u.last_login).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
-              </Typography>
-            </CardContent>
-            {(() => {
-              const actionStatus = canActOn(u);
-              if (!actionStatus.canReset && !actionStatus.canDelete && !actionStatus.canForceLogout) return null;
-              return (
-                <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
-                  <Stack direction="row" spacing={1} width="100%">
-                    {actionStatus.canReset && (
-                      <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Resetear contraseña"}>
-                        <span style={{ width: '100%' }}>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            color="warning" 
-                            fullWidth
-                            disabled={actionStatus.disabled}
-                            onClick={() => setResetTarget(u)}
-                            startIcon={<LockResetIcon />}
-                            aria-label="Restablecer"
-                            data-testid={`reset-${u.username}`}
-                          >
-                            Resetear
-                          </Button>
-                        </span>
-                      </Tooltip>
-                    )}
-                    {actionStatus.canForceLogout && (
-                      <Tooltip title="Forzar cierre de todas las sesiones de este usuario">
-                        <span style={{ display: 'inline-flex' }}>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            color="info"
-                            disabled={actionStatus.disabled}
-                            onClick={() => { setForceLogoutError(''); setForceLogoutTarget(u); }}
-                            sx={{ minWidth: 40, px: 0 }}
-                            aria-label="Forzar cierre de sesiones"
-                            data-testid={`force-logout-${u.username}`}
-                          >
-                            <LogoutIcon />
-                          </Button>
-                        </span>
-                      </Tooltip>
-                    )}
-                    {actionStatus.canDelete && (
-                      <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Eliminar usuario"}>
-                        <span style={{ display: 'inline-flex' }}>
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            color="error"
-                            disabled={actionStatus.disabled}
-                            onClick={() => { setDeleteError(''); setDeleteTarget(u); }}
-                            sx={{ minWidth: 40, px: 0 }}
-                          >
-                            <DeleteIcon />
-                          </Button>
-                        </span>
-                      </Tooltip>
-                    )}
-                  </Stack>
-                </CardActions>
-              );
-            })()}
-          </Card>
-        ))}
-        {!isLoading && users.length === 0 && (
-          <Typography color="text.secondary" textAlign="center" py={4}>No hay usuarios registrados.</Typography>
-        )}
-      </Box>
+      <UserTable
+        users={users}
+        isLoading={isLoading}
+        currentUser={currentUser}
+        setResetTarget={setResetTarget}
+        setDeleteTarget={setDeleteTarget}
+        setForceLogoutTarget={setForceLogoutTarget}
+        setDeleteError={setDeleteError}
+        setForceLogoutError={setForceLogoutError}
+      />
 
-      {/* ── VISTA DE TABLA (ESCRITORIO) ── */}
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0, display: { xs: 'none', md: 'block' } }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#F8F7F4' }}>
-              <TableCell sx={{ fontWeight: 700 }}>Usuario</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Rol</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Creado por</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Último acceso</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700 }}>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 5 }).map((__, j) => (
-                      <TableCell key={j}><Skeleton /></TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              : users.map((u) => (
-                  <TableRow key={u.username} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={600}>{u.username}</Typography>
-                      {u.username === currentUser?.username && (
-                        <Typography variant="caption" color="text.disabled">(tú)</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={u.role}
-                        size="small"
-                        color={ROLE_COLORS[u.role]}
-                        variant="outlined"
-                        sx={{ textTransform: 'capitalize', fontSize: '0.7rem' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" color="text.secondary">{u.created_by ?? '—'}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" color="text.secondary">
-                        {u.last_login
-                          ? new Date(u.last_login).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      {(() => {
-                        const actionStatus = canActOn(u);
-                        return (
-                          <>
-                            {actionStatus.canReset && (
-                              <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Resetear contraseña"}>
-                                <span>
-                                  <IconButton size="small" color="warning" disabled={actionStatus.disabled} onClick={() => setResetTarget(u)} aria-label="Restablecer" data-testid={`reset-${u.username}`}>
-                                    <LockResetIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            )}
-                            {actionStatus.canForceLogout && (
-                              <Tooltip title="Forzar cierre de sesiones">
-                                <span>
-                                  <IconButton size="small" color="info" disabled={actionStatus.disabled} onClick={() => { setForceLogoutError(''); setForceLogoutTarget(u); }} aria-label="Forzar cierre de sesiones" data-testid={`force-logout-${u.username}`}>
-                                    <LogoutIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            )}
-                            {actionStatus.canDelete && (
-                              <Tooltip title={actionStatus.disabled ? actionStatus.disabledReason : "Eliminar usuario"}>
-                                <span>
-                                  <IconButton aria-label="Acción" size="small" color="error" disabled={actionStatus.disabled} onClick={() => { setDeleteError(''); setDeleteTarget(u); }}>
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </TableCell>
-                  </TableRow>
-                ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Dialogs */}
-      <CreateUserDialog
+      <UserFormModal
         open={createOpen}
         actorRole={currentUser?.role ?? 'voluntario'}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => void qc.invalidateQueries({ queryKey: ['users-list'] })}
+        onCreated={onUserCreated}
       />
 
-      <ResetPasswordDialog
+      <PasswordResetModal
         target={resetTarget}
         onClose={() => setResetTarget(null)}
       />

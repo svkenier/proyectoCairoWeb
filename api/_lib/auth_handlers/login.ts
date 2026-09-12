@@ -60,7 +60,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 5. Firmar JWT
   const token = signToken(user.username, user.role, user.tokenVersion || 1);
 
-  // 6. Responder con token y datos públicos del usuario
+  // 6. Configurar la cookie HttpOnly
+  const maxAge = 604800; // 7 días
+  res.setHeader(
+    'Set-Cookie',
+    `petrescue_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`
+  );
+
+  // 7. Responder con token y datos públicos del usuario
   const { password_hash: _ph, ...publicUser } = user;
 
   return res.status(200).json({ token, user: publicUser });

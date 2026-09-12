@@ -16,31 +16,17 @@ import {
   type ReactNode,
 } from 'react';
 import type { AuthState, JWTPayload, PublicUser, LoginRequest, LoginResponse } from '@/types/user';
-import { getToken, setToken, clearSession, post } from '@/api/client';
-
-// ─── Decodificador de JWT (sin verificar firma — eso es tarea del backend) ────
-
-function decodeJWT(token: string): JWTPayload | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-    return JSON.parse(atob(base64 + padding)) as JWTPayload;
-  } catch {
-    return null;
-  }
-}
-
-function isExpired(payload: JWTPayload): boolean {
-  return payload.exp * 1000 < Date.now();
-}
-
-// ─── Contexto ─────────────────────────────────────────────────────────────────
+import { clearSession, post } from '@/api/client';
 
 const USER_KEY = 'petrescue_user';
 
-interface AuthContextValue extends AuthState {
+interface AuthStateWithoutToken {
+  user: PublicUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
+
+interface AuthContextValue extends AuthStateWithoutToken {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -50,32 +36,23 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 const getInitialAuth = () => {
-  if (typeof window === 'undefined') return { user: null, token: null };
-  const savedToken = getToken();
+  if (typeof window === 'undefined') return { user: null };
   const savedUser  = localStorage.getItem(USER_KEY);
 
-  if (savedToken && savedUser) {
-    const payload = decodeJWT(savedToken);
-    if (payload && !isExpired(payload)) {
-      return { token: savedToken, user: JSON.parse(savedUser) as PublicUser };
-    } else {
-      clearSession();
-    }
+  if (savedUser) {
+    return { user: JSON.parse(savedUser) as PublicUser };
   }
-  return { user: null, token: null };
+  return { user: null };
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user,      setUser]       = useState<PublicUser | null>(() => getInitialAuth().user);
-  const [token,     setTokenState] = useState<string | null>(() => getInitialAuth().token);
+  const [user, setUser] = useState<PublicUser | null>(() => getInitialAuth().user);
   const isLoading = false;
 
-  // Login: llama a la API, persiste token+usuario y actualiza estado
+  // Login: llama a la API, persiste usuario y actualiza estado
   const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     const response = await post<LoginResponse>('/auth/login', credentials);
-    setToken(response.token);
     localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-    setTokenState(response.token);
     setUser(response.user);
   }, []);
 
@@ -87,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Si falla el endpoint, igual limpiamos la sesión local
     } finally {
       clearSession();
-      setTokenState(null);
       setUser(null);
     }
   }, []);
@@ -96,9 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        token,
         isLoading,
-        isAuthenticated: Boolean(user) && Boolean(token),
+        isAuthenticated: Boolean(user),
         login,
         logout,
       }}

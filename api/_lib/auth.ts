@@ -28,10 +28,25 @@ export function verifyToken(token: string): JWTPayload {
 }
 
 /**
- * Extrae el Bearer token del header Authorization de una petición.
+ * Extrae el Bearer token de la cookie petrescue_token o de la cabecera Authorization.
  * Retorna null si no hay token.
  */
 export function extractToken(req: VercelRequest): string | null {
+  // 1. Intentar leer desde req.cookies proporcionado por Vercel
+  let token = req.cookies?.petrescue_token;
+
+  // 2. Fallback de parseo manual por si req.cookies viene indefinido
+  if (!token && req.headers.cookie) {
+    const cookies = req.headers.cookie.split(';').map(c => c.trim());
+    const authCookie = cookies.find(c => c.startsWith('petrescue_token='));
+    if (authCookie) {
+      token = authCookie.split('=')[1];
+    }
+  }
+
+  if (token) return token;
+
+  // 3. Fallback a cabecera Authorization: Bearer
   const auth = req.headers['authorization'];
   if (typeof auth !== 'string' || !auth.startsWith('Bearer ')) return null;
   return auth.slice(7).trim() || null;
